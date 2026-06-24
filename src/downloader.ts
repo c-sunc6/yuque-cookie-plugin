@@ -32,7 +32,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
   const tocMap = buildTocMaps(book.tocList)
   const progressItems: ProgressItem[] = []
   const articleUrlPrefix = url.replace(new RegExp(`(.*?/${book.bookSlug}).*`), '$1')
-  const failures: Array<{ title: string; url?: string; error: string }> = []
+  const failures: Array<{ title: string; url?: string; error: string; retry_url?: string }> = []
   const warnings: DownloadWarning[] = []
   let downloaded = 0
   let skipped = 0
@@ -90,6 +90,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
       failures.push({
         title: item.title,
         url: item.url,
+        retry_url: `${articleUrlPrefix}/${item.url}`,
         error: error instanceof Error ? error.message : String(error)
       })
     } finally {
@@ -119,7 +120,8 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
     incremental: options.incremental,
     options,
     warnings,
-    failures
+    failures,
+    retry: buildRetryPlan('download-doc', failures.map((item) => item.retry_url || item.url).filter(isString), options)
   }
   const report = await writeReport('download-book', summary)
   return {
@@ -191,7 +193,8 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
     downloaded,
     options,
     warnings,
-    failures
+    failures,
+    retry: buildRetryPlan('download-doc', failures.map((item) => item.url).filter(isString), options)
   }
   const report = await writeReport('download-doc', summary)
   return {
@@ -366,4 +369,28 @@ function getPathItems(item: YuqueTocItem, tocMap: Map<string, YuqueTocItem>): Yu
 function logProgress(options: DownloadOptions, message: string): void {
   if (options.quiet) return
   process.stderr.write(`${message}\n`)
+}
+
+function buildRetryPlan(command: 'download-doc', urls: string[], options: DownloadOptions): Record<string, unknown> {
+  return {
+    command,
+    urls,
+    count: urls.length,
+    args: [
+      command,
+      ...urls,
+      '--dist-dir',
+      options.distDir,
+      ...(options.ignoreImg ? ['--ignore-img'] : []),
+      ...(options.ignoreAttachments === true ? ['--ignore-attachments'] : []),
+      ...(typeof options.ignoreAttachments === 'string' ? ['--ignore-attachments', options.ignoreAttachments] : []),
+      ...(options.toc ? ['--toc'] : []),
+      ...(options.hideFooter ? ['--hide-footer'] : []),
+      ...(options.quiet ? ['--quiet'] : [])
+    ]
+  }
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0
 }

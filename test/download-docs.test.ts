@@ -50,6 +50,18 @@ describe('downloadDocs migrated doc command coverage', () => {
         url: 'https://www.yuque.com/yuque/testbook/notfound'
       }
     ])
+    expect(result.retry).toMatchObject({
+      command: 'download-doc',
+      urls: ['https://www.yuque.com/yuque/testbook/notfound'],
+      count: 1
+    })
+    expect((result.retry as { args: string[] }).args).toEqual([
+      'download-doc',
+      'https://www.yuque.com/yuque/testbook/notfound',
+      '--dist-dir',
+      cwd,
+      '--quiet'
+    ])
     expect(await readFile(path.join(cwd, '测试文档.md'), 'utf8')).toContain('# 测试文档')
   })
 })

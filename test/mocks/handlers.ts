@@ -109,6 +109,30 @@ export const handlers = [
     ]
     return appDataHtml(data)
   }),
+  http.get('https://www.yuque.com/yuque/with-failure', () => {
+    const data = structuredClone(appData)
+    data.book.slug = 'with-failure'
+    data.book.name = 'Book With Failure'
+    data.book.toc = [
+      {
+        type: 'DOC',
+        title: '文档1',
+        uuid: '002',
+        url: 'one',
+        child_uuid: '',
+        parent_uuid: ''
+      },
+      {
+        type: 'DOC',
+        title: '失败文档',
+        uuid: 'fail-001',
+        url: 'faildoc',
+        child_uuid: '',
+        parent_uuid: ''
+      }
+    ]
+    return appDataHtml(data)
+  }),
   http.get('https://www.yuque.com/api/docs/one', ({ request }) => {
     const url = new URL(request.url)
     return HttpResponse.json(url.searchParams.get('mode') ? docMdData : { data: { content: '<p>one</p>' } })
@@ -117,6 +141,7 @@ export const handlers = [
     const url = new URL(request.url)
     return HttpResponse.json(url.searchParams.get('mode') ? docMdData2 : { data: { content: '<p>two</p>' } })
   }),
+  http.get('https://www.yuque.com/api/docs/faildoc', () => HttpResponse.json({ data: { type: 'Doc' } })),
   http.get('https://www.yuque.com/api/docs/board', () => HttpResponse.json(boardData)),
   http.get('https://www.yuque.com/api/docs/table', () => HttpResponse.json(tableData)),
   http.get('https://www.yuque.com/api/docs/sheet', ({ request }) => {

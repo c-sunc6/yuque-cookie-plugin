@@ -136,6 +136,20 @@ Downloading book "工控" (15 docs) -> /tmp/yuque-download-test/工控
 - `attachments/`
 - 本地报告 `reports/download-book-*.json`
 
+如果部分文档失败，最终 JSON 和本地报告会包含 `retry`：
+
+```json
+{
+  "retry": {
+    "command": "download-doc",
+    "urls": ["https://www.yuque.com/user/book/failed-doc"],
+    "args": ["download-doc", "https://www.yuque.com/user/book/failed-doc", "--dist-dir", "download"]
+  }
+}
+```
+
+AI 或脚本可以用 `retry.args` 只重试失败文档。
+
 ## 5. 下载单篇或多篇文档
 
 下载单篇：

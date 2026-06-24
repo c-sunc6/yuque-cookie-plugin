@@ -126,6 +126,34 @@ describe('downloadBook list/summary coverage', () => {
     ])
   })
 
+  it('includes retry plan when book docs fail', async () => {
+    const result = await downloadBook(client, 'https://www.yuque.com/yuque/with-failure', options({ quiet: true }))
+    expect(result).toMatchObject({
+      ok: false,
+      docs: 2,
+      downloaded: 1,
+      failures: [
+        {
+          title: '失败文档',
+          url: 'faildoc',
+          retry_url: 'https://www.yuque.com/yuque/with-failure/faildoc'
+        }
+      ],
+      retry: {
+        command: 'download-doc',
+        urls: ['https://www.yuque.com/yuque/with-failure/faildoc'],
+        count: 1
+      }
+    })
+    expect((result.retry as { args: string[] }).args).toEqual([
+      'download-doc',
+      'https://www.yuque.com/yuque/with-failure/faildoc',
+      '--dist-dir',
+      cwd,
+      '--quiet'
+    ])
+  })
+
   it('skips unchanged docs on a second incremental run', async () => {
     await downloadBook(client, 'https://www.yuque.com/yuque/base1', options({ incremental: true }))
     const result = await downloadBook(client, 'https://www.yuque.com/yuque/base1', options({ incremental: true }))

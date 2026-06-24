@@ -27,7 +27,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       58 passed
+Tests       59 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -165,6 +165,7 @@ Tests       58 passed
 - 本地图片数量和文件大小
 - 第二次增量下载跳过未变文档
 - TOC `LINK` 节点不下载，但会保留到 `index.md` 外部链接并记录 `warnings`
+- 文档失败时报告 `retry` 计划，可用于只重试失败文档
 
 ### download-doc
 
@@ -179,6 +180,7 @@ Tests       58 passed
 - 部分 URL 失败时保留已成功下载的文档
 - failures 摘要
 - 全部 URL 失败时 CLI 退出码为 1
+- 部分失败时报告 `retry.command`、`retry.urls`、`retry.args`
 
 ### serve-book
 
@@ -226,7 +228,7 @@ Tests       58 passed
 - `test/cli.test.ts`
 - 原 snapshot 测试
 - `download/article` 的 custom key token、音视频细节、失败信息 parity
-- `download/list` 的失败重试报告 parity
+- `download/list` 更复杂的失败分组和人工提示文案 parity
 
 ## 已发现的差异
 
