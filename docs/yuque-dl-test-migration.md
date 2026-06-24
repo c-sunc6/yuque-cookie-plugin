@@ -225,6 +225,9 @@ Tests       66 passed
 - 不进入默认 `npm test`。
 - 新增 `npm run real:acceptance -- --book-url <url>`。
 - 真实验收覆盖 inspect、首次整库下载、第二次增量下载、`index.md`、`progress.json`。
+- 支持重复 `--doc-url` 做单篇/多篇文档验收。
+- 单文档验收会检查每个下载出的 Markdown 文件是否存在、非空，并记录预览片段。
+- 单文档验收会提升 `warning_summary`、`retry` 和下载器报告路径，便于检查音视频、图片、附件资源失败。
 - 验收报告写入 `reports/real-acceptance-*.json`，不保存 Cookie。
 
 ## 尚未迁移的 yuque-dl 测试
@@ -277,4 +280,4 @@ yuque-dl 支持 `-k --key` 和 `-t --token`。本项目核心路线仍是 `_yuqu
 
 1. 迁移 yuque-dl snapshot 测试，或改造成更稳定的结构化断言。
 2. 继续补 `test/cli.test.ts` 中尚未覆盖的 server/CLI 细节。
-3. 用 `npm run real:acceptance` 定期验证真实私有知识库，不把真实网络/cookie 放进默认测试。
+3. 用 `npm run real:acceptance` 定期验证真实私有知识库，尤其是包含音视频卡片的单篇文档，不把真实网络/cookie 放进默认测试。

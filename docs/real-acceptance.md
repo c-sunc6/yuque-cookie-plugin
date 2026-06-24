@@ -52,6 +52,43 @@ npm run real:acceptance -- \
   --dist-dir /tmp/yuque-real-docs
 ```
 
+报告会额外检查每个下载出的 Markdown 文件：
+
+- `download-doc.ok`
+- `download-doc.files`
+- `download-doc-file-1.ok`
+- `download-doc-file-1.size`
+- `download-doc-file-1.preview`
+
+如果有多个 `--doc-url`，会按下载结果依次生成 `download-doc-file-N` 检查项。
+
+## 音视频和资源验收
+
+建议选择包含图片、附件、音频或视频卡片的真实文档单独跑：
+
+```bash
+npm run real:acceptance -- \
+  --doc-url https://www.yuque.com/user/book/doc-with-media \
+  --dist-dir /tmp/yuque-real-media
+```
+
+重点看报告里的：
+
+- `download-doc.warning_summary.total`
+- `download-doc.warning_summary.by_type`
+- `download-doc.warning_summary.retryable_resources`
+- `download-doc.retry`
+
+判断方式：
+
+- `warning_summary.total = 0`：主文档和资源都没有发现下载告警。
+- `warning_summary.by_type.media > 0`：音频或视频资源有下载失败，需要检查 `retryable_resources`。
+- `warning_summary.by_type.image > 0`：图片资源有下载失败。
+- `warning_summary.by_type.attachment > 0`：附件资源有下载失败。
+- `retryable_resources` 中的 `url` 是后续人工排查或单独补下载的依据。
+
+注意：`download-doc.retry` 只针对失败文档 URL；资源级失败目前通过 `warning_summary.retryable_resources` 汇总，还没有独立的资源重试命令。
+
 ## 额外 Cookie
 
 如果需要企业私有语雀、公开密码或特殊访问 Cookie：
@@ -76,6 +113,12 @@ npm run real:acceptance -- \
 - `book-progress.ok: true`
 
 如果 `warnings` 非空，说明主流程成功，但有图片、附件或音视频资源下载失败，需要人工评估是否接受。
+
+单篇资源验收至少应看到：
+
+- `download-doc.ok: true`
+- `download-doc-file-1.ok: true`
+- `download-doc.warning_summary.total: 0`，或能解释每一条资源告警
 
 ## 注意
 

@@ -90,14 +90,21 @@ async function main(): Promise<void> {
       distDir,
       quiet: true
     }))
+    const files = Array.isArray(docs.files) ? docs.files.filter(isString) : []
     checks.push({
       step: 'download-doc',
       ok: docs.ok,
       downloaded: docs.downloaded,
-      files: docs.files,
+      files,
       failures: docs.failures,
-      warnings: docs.warnings
+      warnings: docs.warnings,
+      warning_summary: docs.warning_summary,
+      retry: docs.retry,
+      report: docs.report
     })
+    for (const [index, file] of files.entries()) {
+      checks.push(await fileCheck(`download-doc-file-${index + 1}`, file))
+    }
   }
 
   const report = {
@@ -137,6 +144,10 @@ function requireValue(argv: string[], index: number, flag: string): string {
   const value = argv[index]
   if (!value || value.startsWith('--')) throw new Error(`Missing value for ${flag}.`)
   return value
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0
 }
 
 async function fileCheck(step: string, file: string): Promise<Record<string, unknown>> {
