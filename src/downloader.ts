@@ -4,6 +4,7 @@ import { YuqueCookieClient } from './client-cookie.ts'
 import { writeReport } from './reports.ts'
 import type { DownloadOptions, DownloadWarning, DownloadWarningSummary, ProgressItem, YuqueTocItem } from './types.ts'
 import {
+  buildResourceManifest,
   buildTocMaps,
   fixInlineCode,
   fixLatex,
@@ -106,6 +107,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
     progressItems
   })
   await writeProgress(bookPath, progressItems)
+  const resourceManifest = await buildResourceManifest(bookPath)
 
   const summary = {
     ok: failures.length === 0,
@@ -119,6 +121,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
     skipped,
     incremental: options.incremental,
     options,
+    resources: resourceManifest,
     warnings,
     warning_summary: buildWarningSummary(warnings),
     failures,
@@ -187,12 +190,14 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
     }
   }
 
+  const resourceManifest = await buildResourceManifest(distPath)
   const summary = {
     ok: failures.length === 0,
     dist_path: distPath,
     files,
     downloaded,
     options,
+    resources: resourceManifest,
     warnings,
     warning_summary: buildWarningSummary(warnings),
     failures,

@@ -171,6 +171,30 @@ AI 或脚本可以用 `retry.args` 只重试失败文档。
 
 这表示主文档已经保存，但资源需要后续人工检查或单独补救。
 
+下载成功后，最终 JSON 和报告还会包含 `resources`，用于让 AI 或脚本确认图片、附件、音视频等资源实际落盘情况：
+
+```json
+{
+  "resources": {
+    "total": 2,
+    "by_type": {
+      "image": 1,
+      "attachment": 1
+    },
+    "total_size": 146111,
+    "files": [
+      {
+        "type": "attachment",
+        "path": "attachments/123459/test.pdf",
+        "size": 46219
+      }
+    ]
+  }
+}
+```
+
+`resources.files` 只记录本地相对路径和大小，不保存 Cookie。
+
 ## 5. 下载单篇或多篇文档
 
 下载单篇：

@@ -95,6 +95,34 @@ describe('downloadDocs migrated doc command coverage', () => {
       ]
     })
   })
+
+  it('reports localized attachment resources for downloaded docs', async () => {
+    const result = await downloadDocs(client, [
+      'https://www.yuque.com/yuque/testbook/attachments'
+    ], options())
+
+    expect(result.ok).toBe(true)
+    expect(result.resources).toMatchObject({
+      total: 2,
+      by_type: {
+        image: 1,
+        attachment: 1
+      },
+      total_size: 146111,
+      files: [
+        {
+          type: 'attachment',
+          path: 'attachments/123459/test.pdf',
+          size: 46219
+        },
+        {
+          type: 'image',
+          path: 'img/123459/1.jpeg',
+          size: 99892
+        }
+      ]
+    })
+  })
 })
 
 function options(overrides: Partial<DownloadOptions> = {}): DownloadOptions {

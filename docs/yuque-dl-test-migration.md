@@ -27,7 +27,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       69 passed
+Tests       71 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -52,6 +52,7 @@ Tests       69 passed
 - `removeEmojis`
 - `formatDate`
 - `writeSummary` 结构化输出：普通标题、标题即文档、嵌套文档、外链节点、空格链接转义
+- `buildResourceManifest` 输出本地图片/附件资源清单、类型统计和总大小
 
 ### sheet
 
@@ -151,6 +152,7 @@ Tests       69 passed
 - 附件下载失败时保留原始链接
 - 附件下载失败时记录 `warnings`
 - 资源失败按类型生成 `warning_summary`
+- 下载结果生成 `resources` manifest，记录本地资源相对路径、大小和类型统计
 - 指定后缀忽略
 
 ### list / summary
@@ -168,6 +170,7 @@ Tests       69 passed
 - `index.md` summary
 - `progress.json` 路径、标题链路、更新时间字段
 - 本地图片数量和文件大小
+- 整库下载结果生成 `resources` manifest，覆盖图片落盘清单
 - 第二次增量下载跳过未变文档
 - TOC `LINK` 节点不下载，但会保留到 `index.md` 外部链接并记录 `warnings`
 - 文档失败时报告 `retry` 计划，可用于只重试失败文档
@@ -183,6 +186,7 @@ Tests       69 passed
 
 - 单篇/多篇文档下载
 - 可读中文文件名
+- 下载结果生成 `resources` manifest，覆盖单篇文档图片和附件落盘清单
 - 部分 URL 失败时保留已成功下载的文档
 - failures 摘要
 - 全部 URL 失败时 CLI 退出码为 1

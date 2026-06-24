@@ -165,6 +165,17 @@ export interface DownloadWarningSummary {
   }>
 }
 
+export interface DownloadResourceManifest {
+  total: number
+  by_type: Record<'image' | 'attachment', number>
+  total_size: number
+  files: Array<{
+    type: 'image' | 'attachment'
+    path: string
+    size: number
+  }>
+}
+
 export interface ProgressItem {
   path: string
   savePath?: string

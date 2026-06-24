@@ -1,9 +1,10 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   captureImageUrl,
+  buildResourceManifest,
   fixInlineCode,
   fixLatex,
   fixMarkdownImage,
@@ -139,6 +140,40 @@ describe('download utils migrated from yuque-dl', () => {
       expect(content).toContain('## [Title Doc](Title%20Doc/index.md)')
       expect(content).toContain('- [Child Doc](Title%20Doc/Child%20Doc.md)')
       expect(content).toContain('## [External Ref](https://example.com/ref)')
+    } finally {
+      await rm(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('builds a resource manifest for localized images and attachments', async () => {
+    const cwd = await mkdtemp(path.join(os.tmpdir(), 'yuque-resource-manifest-'))
+    try {
+      await mkdir(path.join(cwd, 'Article/img/doc-1'), { recursive: true })
+      await mkdir(path.join(cwd, 'Article/attachments/doc-1'), { recursive: true })
+      await writeFile(path.join(cwd, 'Article/img/doc-1/a.png'), 'image')
+      await writeFile(path.join(cwd, 'Article/attachments/doc-1/a.pdf'), 'attachment')
+      await writeFile(path.join(cwd, 'Article/body.md'), '# Ignore\n')
+      const manifest = await buildResourceManifest(cwd)
+      expect(manifest).toEqual({
+        total: 2,
+        by_type: {
+          image: 1,
+          attachment: 1
+        },
+        total_size: 15,
+        files: [
+          {
+            type: 'attachment',
+            path: 'Article/attachments/doc-1/a.pdf',
+            size: 10
+          },
+          {
+            type: 'image',
+            path: 'Article/img/doc-1/a.png',
+            size: 5
+          }
+        ]
+      })
     } finally {
       await rm(cwd, { recursive: true, force: true })
     }

@@ -200,6 +200,14 @@ export const handlers = [
     data.doc.book_id = 41966892
     return appDataHtml(data)
   }),
+  http.get('https://www.yuque.com/yuque/testbook/attachments', () => {
+    const data = structuredClone(singleDocData)
+    data.doc.id = 123459
+    data.doc.slug = 'attachments'
+    data.doc.title = '附件文档'
+    data.doc.book_id = 41966892
+    return appDataHtml(data)
+  }),
   http.get('https://www.yuque.com/api/docs/testdoc2', ({ request }) => {
     const url = new URL(request.url)
     if (url.searchParams.get('book_id') === '41966892') {

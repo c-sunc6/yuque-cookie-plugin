@@ -1,10 +1,10 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { createWriteStream, existsSync } from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import markdownToc from 'markdown-toc'
 import pako from 'pako'
-import type { DownloadOptions, DownloadWarning, ProgressItem, YuqueTocItem } from './types.ts'
+import type { DownloadOptions, DownloadResourceManifest, DownloadWarning, ProgressItem, YuqueTocItem } from './types.ts'
 
 const IMAGE_SIGN_KEY = 'UXO91eVnUveQn8suOJaYMvBcWs9KptS8N5HoP8ezSeU4vqApZpy1CkPaTpkpQEx2W2mlhxL8zwS8UePwBgksUM0CTtAODbTTTDFD'
 
@@ -236,6 +236,22 @@ export async function writeProgress(bookPath: string, items: ProgressItem[]): Pr
   await writeFile(path.join(bookPath, 'progress.json'), `${JSON.stringify(items, null, 2)}\n`)
 }
 
+export async function buildResourceManifest(rootPath: string): Promise<DownloadResourceManifest> {
+  const root = path.resolve(rootPath)
+  const files: DownloadResourceManifest['files'] = []
+  await collectResourceFiles(root, root, files)
+  files.sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'))
+  return {
+    total: files.length,
+    by_type: {
+      image: files.filter((file) => file.type === 'image').length,
+      attachment: files.filter((file) => file.type === 'attachment').length
+    },
+    total_size: files.reduce((sum, file) => sum + file.size, 0),
+    files
+  }
+}
+
 export function shouldSkipByIncremental(current: ProgressItem, previous: ProgressItem | undefined, incremental: boolean): boolean {
   if (!incremental || !previous) return false
   return current.contentUpdatedAt !== undefined && previous.contentUpdatedAt === current.contentUpdatedAt
@@ -461,6 +477,34 @@ function normalizeIgnoreAttachments(value: unknown): boolean | string {
   if (value === undefined || value === false) return false
   if (value === true) return true
   return String(value)
+}
+
+async function collectResourceFiles(root: string, current: string, files: DownloadResourceManifest['files']): Promise<void> {
+  let entries: string[]
+  try {
+    entries = await readdir(current)
+  } catch {
+    return
+  }
+  for (const entry of entries) {
+    const full = path.join(current, entry)
+    const info = await stat(full).catch(() => undefined)
+    if (!info) continue
+    if (info.isDirectory()) {
+      await collectResourceFiles(root, full, files)
+      continue
+    }
+    if (!info.isFile()) continue
+    const rel = path.relative(root, full).split(path.sep).join('/')
+    const parts = rel.split('/')
+    const type = parts.includes('img') ? 'image' : parts.includes('attachments') ? 'attachment' : undefined
+    if (!type) continue
+    files.push({
+      type,
+      path: rel,
+      size: info.size
+    })
+  }
 }
 
 function shouldIgnoreAttachment(url: string, ignore: boolean | string): boolean {

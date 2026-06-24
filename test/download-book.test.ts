@@ -81,6 +81,18 @@ describe('downloadBook list/summary coverage', () => {
       99892,
       81011
     ])
+    expect(result.resources).toMatchObject({
+      total: 2,
+      by_type: {
+        image: 2,
+        attachment: 0
+      },
+      total_size: 180903
+    })
+    expect((result.resources as { files: Array<{ path: string }> }).files.map((file) => file.path)).toEqual([
+      'Title1/img/002/1.jpeg',
+      'Title1/img/002/2.jpeg'
+    ])
   })
 
   it('downloads a title-doc node as index.md and child docs below it', async () => {
