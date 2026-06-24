@@ -51,6 +51,7 @@ Tests       66 passed
 - `getMarkdownImageList`
 - `removeEmojis`
 - `formatDate`
+- `writeSummary` 结构化输出：普通标题、标题即文档、嵌套文档、外链节点、空格链接转义
 
 ### sheet
 
@@ -170,6 +171,7 @@ Tests       66 passed
 - 第二次增量下载跳过未变文档
 - TOC `LINK` 节点不下载，但会保留到 `index.md` 外部链接并记录 `warnings`
 - 文档失败时报告 `retry` 计划，可用于只重试失败文档
+- `writeSummary` 直接单元测试覆盖 title/doc/title-doc/link 的 index 渲染，替代原 summary snapshot 的核心断言
 
 ### download-doc
 

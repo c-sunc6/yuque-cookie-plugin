@@ -1,3 +1,6 @@
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   captureImageUrl,
@@ -7,8 +10,10 @@ import {
   fixPath,
   formatDate,
   getMarkdownImageList,
-  removeEmojis
+  removeEmojis,
+  writeSummary
 } from '../src/download-utils.ts'
+import type { ProgressItem } from '../src/types.ts'
 
 describe('download utils migrated from yuque-dl', () => {
   it('fixLatex converts non-svg latex URLs to source text', () => {
@@ -109,8 +114,62 @@ describe('download utils migrated from yuque-dl', () => {
     expect(formatDate('2023-10-07T06:12:28.000Z')).toMatch(/2023-10-07/)
     expect(formatDate('abcde')).toBe('')
   })
+
+  it('writes a structured book summary for titles, title-docs, nested docs, and link nodes', async () => {
+    const cwd = await mkdtemp(path.join(os.tmpdir(), 'yuque-summary-'))
+    try {
+      const content = await writeSummary({
+        bookPath: cwd,
+        bookName: 'Test Book',
+        bookDesc: 'This is a test book',
+        progressItems: [
+          progressItem('001', '', 'TITLE', 'Title1', 'Title1'),
+          progressItem('002', '001', 'DOC', 'DOC 1', 'Title1/DOC 1.md'),
+          progressItem('003', '', 'DOC', 'Title Doc', 'Title Doc/index.md', '004'),
+          progressItem('004', '003', 'DOC', 'Child Doc', 'Title Doc/Child Doc.md'),
+          progressItem('005', '', 'LINK', 'External Ref', 'External Ref', '', 'https://example.com/ref')
+        ]
+      })
+      const fileContent = await readFile(path.join(cwd, 'index.md'), 'utf8')
+      expect(fileContent).toBe(content)
+      expect(content).toContain('# Test Book')
+      expect(content).toContain('> This is a test book')
+      expect(content).toContain('## Title1')
+      expect(content).toContain('- [DOC 1](Title1/DOC%201.md)')
+      expect(content).toContain('## [Title Doc](Title%20Doc/index.md)')
+      expect(content).toContain('- [Child Doc](Title%20Doc/Child%20Doc.md)')
+      expect(content).toContain('## [External Ref](https://example.com/ref)')
+    } finally {
+      await rm(cwd, { recursive: true, force: true })
+    }
+  })
 })
 
 function imageCard(src: string): string {
   return `<card type="inline" name="image" value="data:${encodeURIComponent(JSON.stringify({ src, alt: 'image' }))}"></card>`
+}
+
+function progressItem(
+  uuid: string,
+  parentUuid: string,
+  type: string,
+  title: string,
+  itemPath: string,
+  childUuid = '',
+  url = title.toLowerCase().replace(/\s+/g, '-')
+): ProgressItem {
+  return {
+    path: itemPath,
+    savePath: path.dirname(itemPath),
+    pathTitleList: itemPath.split('/'),
+    pathIdList: [uuid],
+    toc: {
+      type,
+      title,
+      uuid,
+      parent_uuid: parentUuid,
+      child_uuid: childUuid,
+      url
+    }
+  }
 }
