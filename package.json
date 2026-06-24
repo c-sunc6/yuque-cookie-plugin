@@ -9,6 +9,7 @@
   },
   "scripts": {
     "yuque-local": "tsx ./src/cli.ts",
+    "real:acceptance": "tsx ./scripts/real-acceptance.ts",
     "typecheck": "tsc --noEmit",
     "test": "npm run typecheck && vitest run && npm run yuque-local -- --help",
     "test:unit": "vitest run",

@@ -15,6 +15,7 @@
 - `test/mocks/handlers.ts`
 - `test/mocks/data/*`
 - `test/mocks/assets/*`
+- `scripts/real-acceptance.ts`
 
 当前通过：
 
@@ -203,12 +204,24 @@ Tests       56 passed
 - HTML audio card 发现和追加链接
 - `ignoreAttachments` 后缀列表对音视频生效
 
+### real request / manual acceptance
+
+来源参考：
+
+- `yuque-dl/test/realRequest.test.ts`
+
+当前处理：
+
+- 不进入默认 `npm test`。
+- 新增 `npm run real:acceptance -- --book-url <url>`。
+- 真实验收覆盖 inspect、首次整库下载、第二次增量下载、`index.md`、`progress.json`。
+- 验收报告写入 `reports/real-acceptance-*.json`，不保存 Cookie。
+
 ## 尚未迁移的 yuque-dl 测试
 
 以下测试还没有完整迁移或只完成了首批覆盖：
 
 - `test/cli.test.ts`
-- `test/realRequest.test.ts`
 - 原 snapshot 测试
 - 原 ProgressBar 测试
 - `download/article` 的 custom key token、音视频细节、失败信息 parity
@@ -245,4 +258,4 @@ yuque-dl 支持 `-k --key` 和 `-t --token`。本项目核心路线仍是 `_yuqu
 1. 迁移 yuque-dl snapshot 测试，或改造成更稳定的结构化断言。
 2. 决定是否实现 yuque-dl 的 `ProgressBar` parity，或将测试改为本项目的 stderr progress 模式。
 3. 继续补 `test/cli.test.ts` 中尚未覆盖的 server/CLI 细节。
-4. 评估 `test/realRequest.test.ts` 是否适合作为手动真实验收脚本，而不是默认自动测试。
+4. 用 `npm run real:acceptance` 定期验证真实私有知识库，不把真实网络/cookie 放进默认测试。
