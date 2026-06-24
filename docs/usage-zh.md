@@ -293,6 +293,10 @@ npm run yuque-local -- format-article https://www.yuque.com/user/book/doc --html
 --quiet
 ```
 
+默认情况下，下载进度会写到 stderr，最终结果 JSON 会写到 stdout。这样人可以看到进度，AI 或脚本也可以稳定解析最后的 JSON。
+
+如果需要严格的 JSON 输出，建议加 `--quiet`。
+
 ## 12. 安全规则
 
 - 不要把真实 `_yuque_session` 或 `yuque_ctoken` 写入项目文件。
