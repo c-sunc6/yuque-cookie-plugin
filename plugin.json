@@ -1,0 +1,12 @@
+{
+  "name": "yuque-cookie-plugin",
+  "version": "0.1.0",
+  "description": "Cookie-based local Yuque operations for AI agents. No MCP, no Yuque OpenAPI token.",
+  "commands": {
+    "yuque-local": "./bin/yuque-local.mjs"
+  },
+  "auth": {
+    "type": "cookie",
+    "required_env": ["YUQUE_SESSION", "YUQUE_CTOKEN"]
+  }
+}
