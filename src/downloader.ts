@@ -33,6 +33,8 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
   const progressItems: ProgressItem[] = []
   const articleUrlPrefix = url.replace(new RegExp(`(.*?/${book.bookSlug}).*`), '$1')
   const failures: Array<{ title: string; url?: string; error: string }> = []
+  let downloaded = 0
+  let skipped = 0
 
   for (const item of book.tocList) {
     const progressItem = buildProgressItem(item, tocMap)
@@ -47,7 +49,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
 
     try {
       const articleUrl = `${articleUrlPrefix}/${item.url}`
-      await downloadArticle(client, {
+      const articleResult = await downloadArticle(client, {
         bookId: book.bookId,
         itemUrl: item.url,
         savePath: path.resolve(bookPath, progressItem.savePath || ''),
@@ -61,6 +63,8 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
         progressItem,
         previousProgressItem: previous.get(item.uuid)
       })
+      if (articleResult.skipped) skipped += 1
+      else downloaded += 1
     } catch (error) {
       failures.push({
         title: item.title,
@@ -83,7 +87,9 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
     ok: failures.length === 0,
     book_path: bookPath,
     total: progressItems.length,
-    downloaded: progressItems.filter((item) => item.path.endsWith('.md')).length,
+    docs: progressItems.filter((item) => item.path.endsWith('.md')).length,
+    downloaded,
+    skipped,
     incremental: options.incremental,
     options,
     failures
@@ -100,6 +106,7 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
   await mkdir(distPath, { recursive: true })
   const failures: Array<{ url: string; error: string }> = []
   const files: string[] = []
+  let downloaded = 0
 
   for (const url of urls) {
     try {
@@ -134,6 +141,7 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
         options,
         progressItem
       })
+      downloaded += 1
       files.push(saveFilePath)
     } catch (error) {
       failures.push({
@@ -147,6 +155,7 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
     ok: failures.length === 0,
     dist_path: distPath,
     files,
+    downloaded,
     options,
     failures
   }
@@ -170,7 +179,7 @@ async function downloadArticle(client: YuqueCookieClient, params: {
   options: DownloadOptions
   progressItem: ProgressItem
   previousProgressItem?: ProgressItem
-}): Promise<void> {
+}): Promise<{ skipped: boolean }> {
   const { response, apiUrl, httpStatus } = await client.getDocMarkdownData({
     articleUrl: params.itemUrl,
     bookId: params.bookId,
@@ -183,7 +192,9 @@ async function downloadArticle(client: YuqueCookieClient, params: {
   params.progressItem.publishedAt = data.published_at || ''
   params.progressItem.firstPublishedAt = data.first_published_at || ''
 
-  if (shouldSkipByIncremental(params.progressItem, params.previousProgressItem, params.options.incremental)) return
+  if (shouldSkipByIncremental(params.progressItem, params.previousProgressItem, params.options.incremental)) {
+    return { skipped: true }
+  }
 
   let markdown = ''
   const type = String(data.type || '').toLowerCase()
@@ -259,6 +270,7 @@ async function downloadArticle(client: YuqueCookieClient, params: {
 
   await mkdir(path.dirname(params.saveFilePath), { recursive: true })
   await writeFile(params.saveFilePath, markdown)
+  return { skipped: false }
 }
 
 function buildProgressItem(item: YuqueTocItem, tocMap: Map<string, YuqueTocItem>): ProgressItem | null {
