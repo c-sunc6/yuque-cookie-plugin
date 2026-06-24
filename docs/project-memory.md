@@ -38,7 +38,14 @@ npm run yuque-local -- login
 npm run yuque-local -- inspect <doc-or-book-url>
 npm run yuque-local -- snapshot <doc-url> --out <file>
 npm run yuque-local -- diff-lake <before.json> <after.json>
+npm run yuque-local -- editor-serialize --html-file <file> --out <lake-file>
+npm run yuque-local -- apply-lake <doc-url> --lake-file <body_asl.html> [--dry-run]
+npm run yuque-local -- lake-to-markdown <snapshot.json> --out <file>
+npm run yuque-local -- format-article <doc-url> --html-file <file> [--dry-run]
 npm run yuque-local -- update-lake <doc-url> --lake-file <body_asl.html>
+npm run yuque-local -- download-book <book-url> [--dist-dir download] [--incremental]
+npm run yuque-local -- download-doc <...doc-urls> [--dist-dir download]
+npm run yuque-local -- serve-book <book-path> [--port 5173]
 ```
 
 `login` opens a local web form where the user can paste cookies. Credentials are saved outside the repo:
@@ -147,36 +154,21 @@ Short version:
 
 ## Next Development Priorities
 
-1. Add a DOM-based Lake parser.
+1. Continue yuque-dl parity migration and test coverage.
 
-   This should replace regex-only heading inspection for real transforms.
+   Current native downloader covers whole-book download, multi-doc download, image/attachment/media localization, `progress.json`, `index.md`, incremental skip, VitePress config generation, quiet mode, CLI subprocess tests, and download warning reports. Remaining work is mainly CLI/server edge coverage, stable replacements for old snapshot tests, complex real audio/video fixtures, and deciding the final ProgressBar strategy.
 
-2. Add `lake-to-markdown`.
+2. Keep improving Lake/editor workflows.
 
-   Use `YuqueExportToMarkdown` as the reference, but preserve unknown cards.
+   DOM-based parsing, `lake-to-markdown`, `diff-lake`, `editor-serialize`, `apply-lake`, and `format-article` already exist. Continue validating them against real Yuque snapshots before encoding formatting transforms.
 
-3. Improve `diff-lake`.
-
-   It should compare:
-
-   - heading text
-   - heading attributes
-   - `data-lake-id`
-   - classes
-   - surrounding list or block wrappers
-   - changed cards
-
-4. Add upload support.
+3. Add upload support.
 
    Follow `yuque-chrome-extension`'s `/api/upload/attach` pattern.
 
-5. Add editor serialization.
+4. Add a safe batch workflow.
 
-   For best fidelity, use a browser/editor bridge that asks the Lake editor to serialize content instead of manually building complex Lake.
-
-6. Add a safe batch workflow.
-
-   Batch commands should:
+   Batch write commands should:
 
    - snapshot every doc first
    - apply one transform

@@ -26,7 +26,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       49 passed
+Tests       51 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -110,6 +110,8 @@ Tests       49 passed
 - `download-doc` 真实 CLI 进程
 - `--api-host`
 - `--quiet`
+- `--ignore-img`
+- `--toc`
 
 ### download/article
 
@@ -224,6 +226,8 @@ yuque-dl 有完整 `ProgressBar` 类。本项目当前用 stderr 行输出进度
 ### Markdown 标题策略
 
 yuque-dl 的原 `index.test.ts` snapshot 会保留源 Markdown 里的一级标题。本项目下载文章时会用语雀 TOC 标题生成文档一级标题，因此迁移测试采用结构化断言，验证索引、正文结构、footer、图片本地化和 `progress.json`，不强行复制旧 snapshot。
+
+当前 `--toc` 仍基于源 Markdown 正文生成，因此当源 Markdown 一级标题和语雀 TOC 标题不一致时，TOC 第一项可能显示源标题，而最终文档 H1 显示 TOC 标题。这个行为已经有 CLI 测试覆盖，后续若调整标题策略需要同步更新。
 
 ### API 认证
 

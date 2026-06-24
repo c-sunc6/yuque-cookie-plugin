@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { access, mkdtemp, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -34,6 +34,44 @@ describe('CLI download commands with cross-process mock server', () => {
     const result = JSON.parse(stdout.slice(stdout.indexOf('{')))
     expect(result).toMatchObject({ ok: true, docs: 2, downloaded: 2, failures: [] })
     expect(await readFile(path.join(tempDir, '知识库TEST1/Title1/文档1.md'), 'utf8')).toContain('# 文档1')
+  })
+
+  it('honors --ignore-img through the real CLI process', async () => {
+    const { stdout } = await runCli([
+      'download-book',
+      `${mockServer.origin}/yuque/base1`,
+      '--api-host',
+      mockServer.origin,
+      '--dist-dir',
+      tempDir,
+      '--ignore-img',
+      '--quiet'
+    ])
+    const result = JSON.parse(stdout.slice(stdout.indexOf('{')))
+    expect(result).toMatchObject({ ok: true, docs: 2, downloaded: 2, failures: [] })
+    const markdown = await readFile(path.join(tempDir, '知识库TEST1/Title1/文档1.md'), 'utf8')
+    expect(markdown).toContain('https://gxr404.com/1.jpeg')
+    await expect(access(path.join(tempDir, '知识库TEST1/Title1/img'))).rejects.toThrow()
+  })
+
+  it('honors --toc through the real CLI process', async () => {
+    const { stdout } = await runCli([
+      'download-book',
+      `${mockServer.origin}/yuque/base1`,
+      '--api-host',
+      mockServer.origin,
+      '--dist-dir',
+      tempDir,
+      '--toc',
+      '--ignore-img',
+      '--quiet'
+    ])
+    const result = JSON.parse(stdout.slice(stdout.indexOf('{')))
+    expect(result).toMatchObject({ ok: true, docs: 2, downloaded: 2, failures: [] })
+    const markdown = await readFile(path.join(tempDir, '知识库TEST1/Title1/文档1.md'), 'utf8')
+    expect(markdown).toContain('- [DOC1](#doc1)')
+    expect(markdown).toContain('  * [SubTitle](#subtitle)')
+    expect(markdown).toContain('---')
   })
 
   it('downloads multiple docs through the real CLI process', async () => {

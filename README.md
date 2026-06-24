@@ -82,9 +82,9 @@ Current migrated downloader capabilities:
 
 Still being improved:
 
-- real private-book validation after local cookie login
 - full sheet conversion parity across real Yuque sheet variants
 - richer retry/progress UI parity
+- complex real audio/video fixture validation
 
 ## Research Memory
 

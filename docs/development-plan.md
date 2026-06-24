@@ -110,7 +110,8 @@
 
 CLI 层：
 
-- `bin/yuque-local.mjs` 负责参数解析、命令路由、错误提示。
+- `bin/yuque-local.mjs` 是 thin executable wrapper。
+- `src/cli.ts` 负责参数解析、命令路由、错误提示。
 - 写入类命令必须走 Cookie Client 的安全方法。
 
 Cookie Client：
@@ -142,7 +143,7 @@ Reports：
 | --- | --- | --- | --- | --- | --- |
 | 2026-06-24 | Create implementation roadmap | Planned editor bridge, safe apply, parser, workflow | README links plan | Official Lake editor runtime assets are not vendored yet | Implement bridge and safe CLI commands |
 | 2026-06-24 | Vendor Lake editor runtime | Copied assets from `ilimei/vscode-plugin-lake-editor/media/editor` into `vendor/lake-editor` | `editor-serialize` returns `official-lake-editor` | Asset license/version should be tracked when upgrading | Use official bridge for article formatting tests |
-| 2026-06-24 | Migrate yuque-dl downloader core | Added native `download-book`, `download-doc`, `serve-book`, TOC folder generation, `progress.json`, image/attachment/media localization, Markdown image URL repair, downloader reports, and VitePress sidebar ordering from progress data | `npm run typecheck`, `npm run yuque-local -- --help`; real private download blocked until local cookie login is configured | Sheet/audio/video parity still needs real Yuque fixture validation | Run `login`, then validate `download-book` against a real private knowledge base |
+| 2026-06-24 | Migrate yuque-dl downloader core | Added native `download-book`, `download-doc`, `serve-book`, TOC folder generation, `progress.json`, image/attachment/media localization, Markdown image URL repair, downloader reports, and VitePress sidebar ordering from progress data | `npm run typecheck`, `npm run yuque-local -- --help`; later real validation downloaded private book `工控` successfully | Sheet/audio/video parity still needs real Yuque fixture validation | Continue migrating yuque-dl tests and complex media fixtures |
 | 2026-06-24 | Replace regex Lake parser with DOM parser | Added `node-html-parser` and changed `parseLake` to traverse headings, cards, lists, tables, and paragraphs structurally | Local official-Lake snapshot passed `diff-lake` and `lake-to-markdown` checks | Markdown rendering still only supports common Lake cards | Extend unknown card reporting after real snapshots |
 | 2026-06-24 | Real cookie login and private book download validation | Verified saved web-session credentials, fixed login server shutdown, downloaded `https://www.yuque.com/xiaoxindexiaji/ydv5i5` to `/tmp/yuque-download-test/工控`, and clarified downloader counters as `docs/downloaded/skipped` | `inspect` returned book `工控`; first `download-book` succeeded with 15 docs and 0 failures; second incremental run reported `downloaded: 0`, `skipped: 15`; `npm run typecheck` passed | Filename normalization currently removes spaces because it follows yuque-dl `fixPath` behavior | Decide whether to preserve spaces in exported filenames and add progress output during long downloads |
 | 2026-06-24 | Improve downloader usability | Preserved normal spaces in exported filenames and added per-document progress output for saved/skipped/failed states | Real `download-book` exported readable filenames such as `Visual Studio 2026 完整安装、激活与 Copilot 配置指南.md`; second incremental run reported every doc as skipped and final `downloaded: 0`, `skipped: 15` | Progress currently writes plain lines, not a rich progress bar | Add retry summary and optional quiet/json mode if script consumers need pure stdout |
