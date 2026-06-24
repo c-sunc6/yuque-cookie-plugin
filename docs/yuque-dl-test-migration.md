@@ -25,8 +25,8 @@ npm test
 当前测试结果：
 
 ```text
-Test Files  9 passed
-Tests       35 passed
+Test Files  10 passed
+Tests       36 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -156,6 +156,20 @@ Tests       35 passed
 - 部分 URL 失败时保留已成功下载的文档
 - failures 摘要
 
+### serve-book
+
+来源参考：
+
+- `yuque-dl/test/cli.test.ts` 的 `server <serverPath>` 能力
+- `yuque-dl/src/server.ts`
+
+当前覆盖：
+
+- 生成 `.vitepress/config.mjs`
+- sidebar 按 `progress.json` 顺序
+- 目录 `index.md` link
+- 忽略 `img/`、`attachments/`、`progress.json`
+
 ## 尚未迁移的 yuque-dl 测试
 
 以下测试还没有完整迁移或只完成了首批覆盖：
@@ -190,7 +204,7 @@ yuque-dl 支持 `-k --key` 和 `-t --token`。本项目核心路线是 `_yuque_s
 
 ## 下一步
 
-1. 增加可共享 mock server 的 CLI 子进程下载测试，覆盖 `download-book`、`download-doc`、`serve-book`。
+1. 增加可共享 mock server 的 CLI 子进程下载测试，覆盖真实 CLI `download-book`、`download-doc`。
 2. 迁移 `index.test.ts`，覆盖整库入口级行为。
 3. 扩展 `download/article` 对 custom key、音视频 card、附件失败报告的测试。
 4. 迁移 yuque-dl snapshot 测试，或改造成更稳定的结构化断言。

@@ -8,12 +8,12 @@ export async function serveBook(root: string, options: { port?: number; host?: s
   await access(rootPath)
   const vitepressPath = path.join(rootPath, '.vitepress')
   if (options.force) {
-    await createVitePressConfig(rootPath)
+    await createVitePressConfigForTest(rootPath)
   } else {
     try {
       await access(vitepressPath)
     } catch {
-      await createVitePressConfig(rootPath)
+      await createVitePressConfigForTest(rootPath)
     }
   }
   const server = await createServer(rootPath, {
@@ -24,7 +24,7 @@ export async function serveBook(root: string, options: { port?: number; host?: s
   server.printUrls()
 }
 
-async function createVitePressConfig(root: string): Promise<void> {
+export async function createVitePressConfigForTest(root: string): Promise<void> {
   const vitepressPath = path.join(root, '.vitepress')
   await mkdir(vitepressPath, { recursive: true })
   const progress = await readProgress(root)
