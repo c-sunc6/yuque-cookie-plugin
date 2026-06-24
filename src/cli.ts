@@ -40,6 +40,7 @@ Options:
   --ctoken-env <name>    Env var for yuque_ctoken, default: YUQUE_CTOKEN
   --cookie-key <name>    Extra Yuque cookie key, e.g. verified_books
   --cookie-value <value> Extra Yuque cookie value for --cookie-key
+  --api-host <url>       Override Yuque API host for tests or enterprise deployments
   --dist-dir <dir>       Download output dir, default: download
   --ignore-img           Do not download markdown images
   --ignore-attachments   Do not download attachments, or pass comma-separated extensions
@@ -100,7 +101,8 @@ async function createClient(flags: CliFlags): Promise<YuqueCookieClient> {
   return new YuqueCookieClient({
     session: credentials.session,
     ctoken: credentials.ctoken,
-    extraCookies: credentials.extraCookies
+    extraCookies: credentials.extraCookies,
+    host: typeof flags.apiHost === 'string' ? flags.apiHost : undefined
   })
 }
 

@@ -24,6 +24,7 @@ describe('CLI help', () => {
     expect(stdout).toContain('apply-lake')
     expect(stdout).toContain('--cookie-key')
     expect(stdout).toContain('--cookie-value')
+    expect(stdout).toContain('--api-host')
   })
 
   it('does not require credentials for local diff-lake command errors', async () => {

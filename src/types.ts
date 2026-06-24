@@ -11,6 +11,7 @@ export interface CliFlags {
   ctokenEnv?: string
   cookieKey?: string
   cookieValue?: string
+  apiHost?: string
   port?: string | number
   [key: string]: string | number | boolean | undefined
 }

@@ -25,8 +25,8 @@ npm test
 当前测试结果：
 
 ```text
-Test Files  11 passed
-Tests       46 passed
+Test Files  12 passed
+Tests       48 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -100,6 +100,16 @@ Tests       46 passed
 - `apply-lake`
 - 本地命令缺参数错误不需要凭据
 - Web 命令缺凭据时进入 login flow
+
+### CLI download subprocess
+
+当前覆盖：
+
+- 独立 HTTP mock server，可被 CLI 子进程访问
+- `download-book` 真实 CLI 进程
+- `download-doc` 真实 CLI 进程
+- `--api-host`
+- `--quiet`
 
 ### download/article
 
@@ -215,8 +225,7 @@ yuque-dl 支持 `-k --key` 和 `-t --token`。本项目核心路线仍是 `_yuqu
 
 ## 下一步
 
-1. 增加可共享 mock server 的 CLI 子进程下载测试，覆盖真实 CLI `download-book`、`download-doc`。
-2. 迁移 `index.test.ts`，覆盖整库入口级行为。
+1. 迁移 `index.test.ts`，覆盖整库入口级行为。
 3. 扩展 `download/article` 对附件失败报告的测试。
 4. 迁移 yuque-dl snapshot 测试，或改造成更稳定的结构化断言。
 5. 决定是否实现 yuque-dl 的 `ProgressBar` parity，或将测试改为本项目的 stderr progress 模式。
