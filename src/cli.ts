@@ -237,6 +237,7 @@ async function main(): Promise<void> {
     if (!positional.length) throw new Error('Missing Yuque doc URL.')
     const result = await downloadDocs(client, positional, normalizeDownloadOptions(flags))
     console.log(JSON.stringify(result, null, 2))
+    if (result.ok === false && Number(result.downloaded || 0) === 0) process.exitCode = 1
     return
   }
 

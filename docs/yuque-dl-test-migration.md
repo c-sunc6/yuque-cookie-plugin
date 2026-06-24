@@ -26,7 +26,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       54 passed
+Tests       56 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -112,6 +112,8 @@ Tests       54 passed
 - `--quiet`
 - `--ignore-img`
 - `--toc`
+- `download-doc` 部分失败时保留成功文件
+- `download-doc` 全部失败时 CLI 退出码为 1，同时保留 JSON 失败报告
 
 ### download/article
 
@@ -173,6 +175,7 @@ Tests       54 passed
 - 可读中文文件名
 - 部分 URL 失败时保留已成功下载的文档
 - failures 摘要
+- 全部 URL 失败时 CLI 退出码为 1
 
 ### serve-book
 

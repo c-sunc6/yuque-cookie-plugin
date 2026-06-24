@@ -90,6 +90,45 @@ describe('CLI download commands with cross-process mock server', () => {
     expect(await readFile(path.join(tempDir, '测试文档.md'), 'utf8')).toContain('# 测试文档')
     expect(await readFile(path.join(tempDir, '测试文档2.md'), 'utf8')).toContain('# 测试文档2')
   })
+
+  it('keeps successful doc downloads when one CLI URL fails', async () => {
+    const { stdout } = await runCli([
+      'download-doc',
+      `${mockServer.origin}/yuque/testbook/testdoc`,
+      `${mockServer.origin}/yuque/testbook/notfound`,
+      '--api-host',
+      mockServer.origin,
+      '--dist-dir',
+      tempDir,
+      '--quiet'
+    ])
+    const result = JSON.parse(stdout.slice(stdout.indexOf('{')))
+    expect(result).toMatchObject({
+      ok: false,
+      downloaded: 1,
+      failures: [
+        {
+          url: `${mockServer.origin}/yuque/testbook/notfound`
+        }
+      ]
+    })
+    expect(await readFile(path.join(tempDir, '测试文档.md'), 'utf8')).toContain('# 测试文档')
+  })
+
+  it('fails the CLI for invalid doc URLs', async () => {
+    await expect(runCli([
+      'download-doc',
+      'invalid-url',
+      '--api-host',
+      mockServer.origin,
+      '--dist-dir',
+      tempDir,
+      '--quiet'
+    ])).rejects.toMatchObject({
+      code: 1,
+      stdout: expect.stringContaining('"ok": false')
+    })
+  })
 })
 
 function runCli(args: string[]): Promise<{ stdout: string; stderr: string }> {
