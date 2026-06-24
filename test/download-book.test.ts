@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
@@ -34,10 +34,53 @@ describe('downloadBook list/summary coverage', () => {
       failures: []
     })
     const bookPath = String(result.book_path)
-    expect(await readFile(path.join(bookPath, 'Title1/文档1.md'), 'utf8')).toContain('# 文档1')
-    expect(await readFile(path.join(bookPath, 'Title2/文档2.md'), 'utf8')).toContain('# 文档2')
-    expect(await readFile(path.join(bookPath, 'index.md'), 'utf8')).toContain('## Title1')
-    expect((await readdir(path.join(bookPath, 'Title1/img/002'))).length).toBeGreaterThan(0)
+    const summary = await readFile(path.join(bookPath, 'index.md'), 'utf8')
+    expect(summary).toContain('# 知识库TEST1')
+    expect(summary).toContain('> 知识库 test desc')
+    expect(summary).toContain('## Title1')
+    expect(summary).toContain('- [文档1](Title1/文档1.md)')
+    expect(summary).toContain('## Title2')
+    expect(summary).toContain('- [文档2](Title2/文档2.md)')
+
+    const doc1 = await readFile(path.join(bookPath, 'Title1/文档1.md'), 'utf8')
+    expect(doc1).toContain('# 文档1')
+    expect(doc1).toContain('## SubTitle')
+    expect(doc1).toContain('img/002/')
+    expect(doc1).toContain('> 更新: 2025-03-12 20:59:27')
+    expect(doc1).toContain('> 原文: <https://www.yuque.com/yuque/base1/one>')
+    const doc2 = await readFile(path.join(bookPath, 'Title2/文档2.md'), 'utf8')
+    expect(doc2).toContain('# 文档2')
+    expect(doc2).toContain('### Title2')
+    expect(doc2).toContain('> 原文: <https://www.yuque.com/yuque/base1/two>')
+
+    const progress = JSON.parse(await readFile(path.join(bookPath, 'progress.json'), 'utf8'))
+    expect(progress).toHaveLength(4)
+    expect(progress.map((item: { path: string }) => item.path)).toEqual([
+      'Title1',
+      'Title1/文档1.md',
+      'Title2',
+      'Title2/文档2.md'
+    ])
+    expect(progress[1]).toMatchObject({
+      savePath: 'Title1',
+      pathTitleList: ['Title1', '文档1'],
+      pathIdList: ['001', '002'],
+      contentUpdatedAt: '2025-03-12T12:59:27.000Z',
+      toc: {
+        type: 'DOC',
+        title: '文档1',
+        uuid: '002',
+        url: 'one',
+        parent_uuid: '001'
+      }
+    })
+
+    const imageFiles = (await readdir(path.join(bookPath, 'Title1/img/002'))).sort()
+    expect(imageFiles).toHaveLength(2)
+    expect(await Promise.all(imageFiles.map((file) => stat(path.join(bookPath, 'Title1/img/002', file)).then((item) => item.size)))).toEqual([
+      99892,
+      81011
+    ])
   })
 
   it('downloads a title-doc node as index.md and child docs below it', async () => {
