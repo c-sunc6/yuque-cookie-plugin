@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { existsSync, readFileSync } from 'node:fs'
 import { chmod, mkdir, writeFile } from 'node:fs/promises'
 import { execFile } from 'node:child_process'
+import type { Socket } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import type { CliFlags, YuqueCredentials } from './types.ts'
@@ -56,6 +57,7 @@ async function startLoginServer(port: number): Promise<{ url: string; done: Prom
     resolveDone = resolve
     rejectDone = reject
   })
+  const sockets = new Set<Socket>()
 
   const server = createServer(async (req, res) => {
     try {
@@ -73,8 +75,10 @@ async function startLoginServer(port: number): Promise<{ url: string; done: Prom
           return
         }
         sendHtml(res, successPage())
-        resolveDone({ session, ctoken, saved_at: new Date().toISOString() })
-        setTimeout(() => server.close(), 250)
+        res.on('finish', () => {
+          resolveDone({ session, ctoken, saved_at: new Date().toISOString() })
+          closeLoginServer(server, sockets)
+        })
         return
       }
       res.writeHead(404)
@@ -83,8 +87,13 @@ async function startLoginServer(port: number): Promise<{ url: string; done: Prom
       rejectDone(error)
       res.writeHead(500)
       res.end('Internal error')
-      server.close()
+      closeLoginServer(server, sockets)
     }
+  })
+
+  server.on('connection', (socket) => {
+    sockets.add(socket)
+    socket.on('close', () => sockets.delete(socket))
   })
 
   server.listen(port, '127.0.0.1')
@@ -98,6 +107,14 @@ async function startLoginServer(port: number): Promise<{ url: string; done: Prom
       })
     })
   })
+}
+
+function closeLoginServer(server: ReturnType<typeof createServer>, sockets: Set<Socket>): void {
+  server.close()
+  server.closeIdleConnections?.()
+  setTimeout(() => {
+    for (const socket of sockets) socket.destroy()
+  }, 250).unref()
 }
 
 function readRequestBody(req: IncomingMessage): Promise<string> {
