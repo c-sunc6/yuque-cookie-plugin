@@ -21,7 +21,10 @@ export function normalizeDownloadOptions(flags: Record<string, unknown>): Downlo
 }
 
 export function fixPath(value: string): string {
-  return removeEmojis(value.replace(/[\\/:*?"<>|\n\r]/g, '_').replace(/\s/g, ''))
+  return removeEmojis(value)
+    .replace(/[\\/:*?"<>|\n\r]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 export function removeEmojis(value: string): string {
