@@ -27,7 +27,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       61 passed
+Tests       63 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -209,6 +209,7 @@ Tests       61 passed
 - HTML audio card 发现和追加链接
 - `ignoreAttachments` 后缀列表对音视频生效
 - 音视频资源下载失败时记录 `warnings`
+- 兼容 `download_url` / `downloadUrl` / `src` / `play_url` / 嵌套 `file` 等媒体 API 字段
 
 ### real request / manual acceptance
 
@@ -229,7 +230,7 @@ Tests       61 passed
 
 - `test/cli.test.ts`
 - 原 snapshot 测试
-- `download/article` 的 custom key token、音视频细节、失败信息 parity
+- `download/article` 的 custom key token、真实音视频样本细节 parity
 - `download/list` 更复杂的人工提示文案 parity
 
 ## 已发现的差异

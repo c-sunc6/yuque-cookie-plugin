@@ -55,6 +55,45 @@ describe('media card localization', () => {
     expect(await readFile(path.join(cwd, 'attachments/media/测试音频.mp3'), 'utf8')).toBe('audio-content')
   })
 
+  it('supports alternate video API field names', async () => {
+    const lakeCard = encodeURIComponent(JSON.stringify({
+      videoId: 'inputs/prod/alternate-video.mp4'
+    }))
+    const markdown = `[备用视频](https://www.yuque.com/book/doc?_lake_card=${lakeCard})`
+    const result = await localizeMedia(markdown, '', {
+      savePath: cwd,
+      attachmentsDir: 'attachments/media',
+      headers: {},
+      ignoreAttachments: false,
+      getVideoInfo: async () => ({
+        download_url: dataUrl('alternate-video-content'),
+        filename: '备用视频.mp4'
+      })
+    })
+    expect(result).toContain('[音视频附件: 备用视频.mp4](attachments/media/备用视频.mp4)')
+    expect(await readFile(path.join(cwd, 'attachments/media/备用视频.mp4'), 'utf8')).toBe('alternate-video-content')
+  })
+
+  it('supports nested audio file metadata', async () => {
+    const htmlData = `<card name="audio" value="data:${encodeURIComponent(JSON.stringify({
+      audioId: 'inputs/prod/nested-audio.mp3'
+    }))}"></card>`
+    const result = await localizeMedia('# 文档\n', htmlData, {
+      savePath: cwd,
+      attachmentsDir: 'attachments/media',
+      headers: {},
+      ignoreAttachments: false,
+      getVideoInfo: async () => ({
+        file: {
+          downloadUrl: dataUrl('nested-audio-content'),
+          name: '嵌套音频.mp3'
+        }
+      })
+    })
+    expect(result).toContain('[音视频附件: 嵌套音频.mp3](attachments/media/嵌套音频.mp3)')
+    expect(await readFile(path.join(cwd, 'attachments/media/嵌套音频.mp3'), 'utf8')).toBe('nested-audio-content')
+  })
+
   it('honors ignoreAttachments extension lists for media', async () => {
     const lakeCard = encodeURIComponent(JSON.stringify({
       name: '测试视频.mp4',

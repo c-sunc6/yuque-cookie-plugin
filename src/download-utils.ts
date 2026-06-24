@@ -359,8 +359,9 @@ export async function localizeMedia(markdown: string, htmlData: string, params: 
   for (const item of mediaItems) {
     const info = await params.getVideoInfo(item.id)
     if (!info) continue
-    const url = item.type === 'audio' ? info.audio : info.video
-    const fileName = fixPath(item.name || info.name || info.fileName || path.basename(item.id))
+    const media = normalizeMediaInfo(item, info)
+    const url = media.url
+    const fileName = fixPath(media.fileName)
     if (!url || !fileName) continue
     const relPath = `${params.attachmentsDir}/${fileName}`
     const fullPath = path.resolve(params.savePath, relPath)
@@ -379,6 +380,41 @@ export async function localizeMedia(markdown: string, htmlData: string, params: 
     }
   }
   return data
+}
+
+function normalizeMediaInfo(
+  item: { type: 'audio' | 'video'; id: string; name: string },
+  info: Record<string, any>
+): { url: string; fileName: string } {
+  const url = firstString(
+    item.type === 'audio' ? info.audio : info.video,
+    info.url,
+    info.download_url,
+    info.downloadUrl,
+    info.src,
+    info.play_url,
+    info.playUrl,
+    info.file?.url,
+    info.file?.download_url,
+    info.file?.downloadUrl
+  )
+  const fileName = firstString(
+    info.name,
+    info.fileName,
+    info.filename,
+    info.file?.name,
+    info.file?.fileName,
+    item.name,
+    path.basename(item.id)
+  )
+  return { url, fileName }
+}
+
+function firstString(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value
+  }
+  return ''
 }
 
 export async function writeSummary(params: {
