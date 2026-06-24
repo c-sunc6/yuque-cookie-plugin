@@ -29,6 +29,10 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
   const origin = `http://${req.headers.host}`
   const url = new URL(req.url || '/', origin)
   if (url.pathname === '/yuque/base1') return sendAppData(res, withHost(appData, origin))
+  if (url.pathname === '/yuque/extra-cookie-book') {
+    if (!String(req.headers.cookie || '').includes('verified_books=ok')) return sendText(res, 403, 'Missing verified_books')
+    return sendAppData(res, withHost(appData, origin))
+  }
   if (url.pathname === '/yuque/testbook/testdoc') return sendAppData(res, withHost(singleDocData, origin))
   if (url.pathname === '/yuque/testbook/testdoc2') {
     const data = structuredClone(singleDocData)

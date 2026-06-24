@@ -36,6 +36,24 @@ describe('CLI download commands with cross-process mock server', () => {
     expect(await readFile(path.join(tempDir, '知识库TEST1/Title1/文档1.md'), 'utf8')).toContain('# 文档1')
   })
 
+  it('passes extra cookies through real CLI download commands', async () => {
+    const { stdout } = await runCli([
+      'download-book',
+      `${mockServer.origin}/yuque/extra-cookie-book`,
+      '--api-host',
+      mockServer.origin,
+      '--dist-dir',
+      tempDir,
+      '--cookie-key',
+      'verified_books',
+      '--cookie-value',
+      'ok',
+      '--quiet'
+    ])
+    const result = JSON.parse(stdout.slice(stdout.indexOf('{')))
+    expect(result).toMatchObject({ ok: true, docs: 2, downloaded: 2, failures: [] })
+  })
+
   it('prints progress to stderr while keeping final JSON on stdout', async () => {
     const { stdout, stderr } = await runCli([
       'download-book',
