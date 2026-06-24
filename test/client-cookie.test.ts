@@ -33,4 +33,17 @@ describe('YuqueCookieClient with MSW mocks', () => {
     expect(data.httpStatus).toBe(200)
     expect(data.response.data.sourcecode).toBeTruthy()
   })
+
+  it('supports extra cookies for enterprise or verified-book scenarios', () => {
+    const client = new YuqueCookieClient({
+      session: 'session',
+      ctoken: 'ctoken',
+      extraCookies: {
+        verified_books: 'verified-token'
+      }
+    })
+    expect(client.cookieHeader()).toContain('_yuque_session=session;')
+    expect(client.cookieHeader()).toContain('yuque_ctoken=ctoken;')
+    expect(client.cookieHeader()).toContain('verified_books=verified-token;')
+  })
 })

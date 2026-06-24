@@ -13,16 +13,27 @@ const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json')
 export function getCredentials(flags: CliFlags = {}): YuqueCredentials {
   const envSession = process.env[String(flags.sessionEnv || 'YUQUE_SESSION')]
   const envCtoken = process.env[String(flags.ctokenEnv || 'YUQUE_CTOKEN')]
+  const extraCookies = getExtraCookies(flags)
   if (envSession && envCtoken) {
-    return { session: envSession, ctoken: envCtoken, source: 'env' }
+    return { session: envSession, ctoken: envCtoken, extraCookies, source: 'env' }
   }
 
   const saved = readSavedCredentials()
   if (saved?.session && saved?.ctoken) {
-    return { ...saved, source: CONFIG_FILE }
+    return { ...saved, extraCookies: { ...(saved.extraCookies || {}), ...extraCookies }, source: CONFIG_FILE }
   }
 
   throw new Error('Missing Yuque credentials. Run "yuque-local login" to configure them in your browser.')
+}
+
+function getExtraCookies(flags: CliFlags): Record<string, string> {
+  const fromFlag = typeof flags.cookieKey === 'string' && typeof flags.cookieValue === 'string'
+    ? { [flags.cookieKey]: flags.cookieValue }
+    : {}
+  const envKey = process.env.YUQUE_EXTRA_COOKIE_KEY
+  const envValue = process.env.YUQUE_EXTRA_COOKIE_VALUE
+  const fromEnv = envKey && envValue ? { [envKey]: envValue } : {}
+  return { ...fromEnv, ...fromFlag }
 }
 
 export async function loginWithBrowser(flags: CliFlags = {}): Promise<void> {

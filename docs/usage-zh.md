@@ -66,6 +66,30 @@ npm run yuque-local -- inspect https://www.yuque.com/xiaoxindexiaji/ydv5i5
 
 成功时会输出知识库 id、slug、名称、TOC 数量和当前用户信息。
 
+### 额外 Cookie
+
+默认认证仍然是：
+
+- `_yuque_session`
+- `yuque_ctoken`
+
+如果遇到企业私有语雀或公开密码访问场景，需要额外 Cookie，例如 `verified_books`，可以在命令中临时传入：
+
+```bash
+npm run yuque-local -- inspect https://www.yuque.com/user/book \
+  --cookie-key verified_books \
+  --cookie-value '<cookie-value>'
+```
+
+也可以使用环境变量：
+
+```bash
+export YUQUE_EXTRA_COOKIE_KEY='verified_books'
+export YUQUE_EXTRA_COOKIE_VALUE='<cookie-value>'
+```
+
+额外 Cookie 不会改变本项目的主链路，只用于兼容特殊访问场景。
+
 ## 4. 下载整个知识库
 
 推荐先下载到临时目录验证：

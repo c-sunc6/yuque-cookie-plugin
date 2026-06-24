@@ -9,6 +9,8 @@ export interface CliFlags {
   keepTemp?: boolean
   sessionEnv?: string
   ctokenEnv?: string
+  cookieKey?: string
+  cookieValue?: string
   port?: string | number
   [key: string]: string | number | boolean | undefined
 }
@@ -21,6 +23,7 @@ export interface CliArgs {
 export interface YuqueCredentials {
   session: string
   ctoken: string
+  extraCookies?: Record<string, string>
   source?: string
   saved_at?: string
 }

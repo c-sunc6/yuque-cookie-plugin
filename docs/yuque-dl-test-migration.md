@@ -200,7 +200,7 @@ yuque-dl 有完整 `ProgressBar` 类。本项目当前用 stderr 行输出进度
 
 ### API 认证
 
-yuque-dl 支持 `-k --key` 和 `-t --token`。本项目核心路线是 `_yuque_session + yuque_ctoken`，还没有完整支持企业私有服务自定义 cookie key。
+yuque-dl 支持 `-k --key` 和 `-t --token`。本项目核心路线仍是 `_yuque_session + yuque_ctoken`，现在已增加 `--cookie-key` / `--cookie-value` 和 `YUQUE_EXTRA_COOKIE_KEY` / `YUQUE_EXTRA_COOKIE_VALUE`，用于兼容企业私有服务或 `verified_books` 等额外 Cookie。
 
 ## 下一步
 

@@ -22,6 +22,8 @@ describe('CLI help', () => {
     expect(stdout).toContain('download-doc')
     expect(stdout).toContain('editor-serialize')
     expect(stdout).toContain('apply-lake')
+    expect(stdout).toContain('--cookie-key')
+    expect(stdout).toContain('--cookie-value')
   })
 
   it('does not require credentials for local diff-lake command errors', async () => {

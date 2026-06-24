@@ -38,6 +38,8 @@ Options:
   --keep-temp            Keep editor bridge temp files for debugging
   --session-env <name>   Env var for _yuque_session, default: YUQUE_SESSION
   --ctoken-env <name>    Env var for yuque_ctoken, default: YUQUE_CTOKEN
+  --cookie-key <name>    Extra Yuque cookie key, e.g. verified_books
+  --cookie-value <value> Extra Yuque cookie value for --cookie-key
   --dist-dir <dir>       Download output dir, default: download
   --ignore-img           Do not download markdown images
   --ignore-attachments   Do not download attachments, or pass comma-separated extensions
@@ -97,7 +99,8 @@ async function createClient(flags: CliFlags): Promise<YuqueCookieClient> {
   }
   return new YuqueCookieClient({
     session: credentials.session,
-    ctoken: credentials.ctoken
+    ctoken: credentials.ctoken,
+    extraCookies: credentials.extraCookies
   })
 }
 

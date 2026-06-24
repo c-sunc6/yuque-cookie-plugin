@@ -9,6 +9,7 @@ const DEFAULT_HOST = 'https://www.yuque.com'
 interface YuqueCookieClientOptions {
   session: string
   ctoken: string
+  extraCookies?: Record<string, string>
   host?: string
 }
 
@@ -19,18 +20,28 @@ interface YuqueApiResponse<T = unknown> {
 export class YuqueCookieClient {
   private session: string
   private ctoken: string
+  private extraCookies: Record<string, string>
   private host: string
 
-  constructor({ session, ctoken, host = DEFAULT_HOST }: YuqueCookieClientOptions) {
+  constructor({ session, ctoken, extraCookies = {}, host = DEFAULT_HOST }: YuqueCookieClientOptions) {
     if (!session) throw new Error('Missing YUQUE_SESSION.')
     if (!ctoken) throw new Error('Missing YUQUE_CTOKEN.')
     this.session = session
     this.ctoken = ctoken
+    this.extraCookies = extraCookies
     this.host = host
   }
 
   cookieHeader(): string {
-    return `_yuque_session=${this.session}; yuque_ctoken=${this.ctoken};`
+    const cookies = {
+      _yuque_session: this.session,
+      yuque_ctoken: this.ctoken,
+      ...this.extraCookies
+    }
+    return Object.entries(cookies)
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${key}=${value};`)
+      .join(' ')
   }
 
   htmlHeaders(extra: Record<string, string> = {}): Record<string, string> {
