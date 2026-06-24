@@ -27,7 +27,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       59 passed
+Tests       61 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -146,6 +146,7 @@ Tests       59 passed
 - 附件链接改写
 - 附件下载失败时保留原始链接
 - 附件下载失败时记录 `warnings`
+- 资源失败按类型生成 `warning_summary`
 - 指定后缀忽略
 
 ### list / summary
@@ -207,6 +208,7 @@ Tests       59 passed
 - Markdown `_lake_card` video 链接下载和改写
 - HTML audio card 发现和追加链接
 - `ignoreAttachments` 后缀列表对音视频生效
+- 音视频资源下载失败时记录 `warnings`
 
 ### real request / manual acceptance
 
@@ -228,7 +230,7 @@ Tests       59 passed
 - `test/cli.test.ts`
 - 原 snapshot 测试
 - `download/article` 的 custom key token、音视频细节、失败信息 parity
-- `download/list` 更复杂的失败分组和人工提示文案 parity
+- `download/list` 更复杂的人工提示文案 parity
 
 ## 已发现的差异
 

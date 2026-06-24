@@ -150,6 +150,27 @@ Downloading book "工控" (15 docs) -> /tmp/yuque-download-test/工控
 
 AI 或脚本可以用 `retry.args` 只重试失败文档。
 
+如果文档下载成功，但图片、附件或音视频资源下载失败，最终 JSON 和报告会包含 `warning_summary`：
+
+```json
+{
+  "warning_summary": {
+    "total": 1,
+    "by_type": {
+      "attachment": 1
+    },
+    "retryable_resources": [
+      {
+        "type": "attachment",
+        "url": "https://www.yuque.com/attachments/error.pdf"
+      }
+    ]
+  }
+}
+```
+
+这表示主文档已经保存，但资源需要后续人工检查或单独补救。
+
 ## 5. 下载单篇或多篇文档
 
 下载单篇：

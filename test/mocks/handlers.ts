@@ -161,12 +161,16 @@ export const handlers = [
     })
   }),
   http.get('https://www.yuque.com/api/docs/attachments', () => HttpResponse.json(attachmentsDocMdData)),
-  http.get('https://www.yuque.com/api/docs/attachments-error', () => HttpResponse.json({
-    data: {
-      type: 'Doc',
-      sourcecode: '# DOC1\n\n[error.pdf](https://www.yuque.com/attachments/error.pdf)'
-    }
-  })),
+  http.get('https://www.yuque.com/api/docs/attachments-error', ({ request }) => {
+    const url = new URL(request.url)
+    return HttpResponse.json({
+      data: {
+        type: 'Doc',
+        sourcecode: '# DOC1\n\n[error.pdf](https://www.yuque.com/attachments/error.pdf)',
+        ...(url.searchParams.get('book_id') === '41966892' ? { content: '<p>attachments error</p>' } : {})
+      }
+    })
+  }),
   http.get('https://www.yuque.com/yuque/testbook/testdoc', () => appDataHtml(singleDocData)),
   http.get('https://www.yuque.com/api/docs/testdoc', ({ request }) => {
     const url = new URL(request.url)
@@ -185,6 +189,14 @@ export const handlers = [
     data.doc.id = 123457
     data.doc.slug = 'testdoc2'
     data.doc.title = '测试文档2'
+    data.doc.book_id = 41966892
+    return appDataHtml(data)
+  }),
+  http.get('https://www.yuque.com/yuque/testbook/attachments-error', () => {
+    const data = structuredClone(singleDocData)
+    data.doc.id = 123458
+    data.doc.slug = 'attachments-error'
+    data.doc.title = '附件失败文档'
     data.doc.book_id = 41966892
     return appDataHtml(data)
   }),

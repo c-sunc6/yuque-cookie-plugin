@@ -64,6 +64,37 @@ describe('downloadDocs migrated doc command coverage', () => {
     ])
     expect(await readFile(path.join(cwd, '测试文档.md'), 'utf8')).toContain('# 测试文档')
   })
+
+  it('summarizes retryable resource warnings', async () => {
+    const result = await downloadDocs(client, [
+      'https://www.yuque.com/yuque/testbook/attachments-error'
+    ], options())
+
+    expect(result.ok).toBe(true)
+    expect(result.downloaded).toBe(1)
+    expect(result.warnings).toEqual([
+      expect.objectContaining({
+        type: 'attachment',
+        title: '附件失败文档',
+        url: 'https://www.yuque.com/attachments/error.pdf',
+        error: expect.stringContaining('download failed: 404')
+      })
+    ])
+    expect(result.warning_summary).toEqual({
+      total: 1,
+      by_type: {
+        attachment: 1
+      },
+      retryable_resources: [
+        expect.objectContaining({
+          type: 'attachment',
+          title: '附件失败文档',
+          url: 'https://www.yuque.com/attachments/error.pdf',
+          error: expect.stringContaining('download failed: 404')
+        })
+      ]
+    })
+  })
 })
 
 function options(overrides: Partial<DownloadOptions> = {}): DownloadOptions {

@@ -152,6 +152,18 @@ export interface DownloadWarning {
   error: string
 }
 
+export interface DownloadWarningSummary {
+  total: number
+  by_type: Record<string, number>
+  retryable_resources: Array<{
+    type: DownloadWarning['type']
+    title?: string
+    url: string
+    file?: string
+    error: string
+  }>
+}
+
 export interface ProgressItem {
   path: string
   savePath?: string

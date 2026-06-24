@@ -3,6 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, it, afterEach, beforeEach } from 'vitest'
 import { localizeMedia } from '../src/download-utils.ts'
+import type { DownloadWarning } from '../src/types.ts'
 
 let cwd = ''
 
@@ -72,6 +73,36 @@ describe('media card localization', () => {
     })
     expect(result).toBe(markdown)
     await expect(stat(path.join(cwd, 'attachments/media/测试视频.mp4'))).rejects.toThrow()
+  })
+
+  it('collects warnings when media downloads fail', async () => {
+    const lakeCard = encodeURIComponent(JSON.stringify({
+      name: '失败视频.mp4',
+      videoId: 'inputs/prod/fail.mp4'
+    }))
+    const markdown = `[失败视频](https://www.yuque.com/book/doc?_lake_card=${lakeCard})`
+    const warnings: DownloadWarning[] = []
+    const result = await localizeMedia(markdown, '', {
+      savePath: cwd,
+      attachmentsDir: 'attachments/media',
+      headers: {},
+      ignoreAttachments: false,
+      warnings,
+      title: 'Media Article',
+      getVideoInfo: async () => ({
+        video: 'http://127.0.0.1:1/fail.mp4',
+        name: '失败视频.mp4'
+      })
+    })
+    expect(result).toBe(markdown)
+    expect(warnings).toEqual([
+      expect.objectContaining({
+        type: 'media',
+        title: 'Media Article',
+        url: 'http://127.0.0.1:1/fail.mp4',
+        error: expect.stringContaining('fetch failed')
+      })
+    ])
   })
 })
 

@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { YuqueCookieClient } from './client-cookie.ts'
 import { writeReport } from './reports.ts'
-import type { DownloadOptions, DownloadWarning, ProgressItem, YuqueTocItem } from './types.ts'
+import type { DownloadOptions, DownloadWarning, DownloadWarningSummary, ProgressItem, YuqueTocItem } from './types.ts'
 import {
   buildTocMaps,
   fixInlineCode,
@@ -120,6 +120,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
     incremental: options.incremental,
     options,
     warnings,
+    warning_summary: buildWarningSummary(warnings),
     failures,
     retry: buildRetryPlan('download-doc', failures.map((item) => item.retry_url || item.url).filter(isString), options)
   }
@@ -193,6 +194,7 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
     downloaded,
     options,
     warnings,
+    warning_summary: buildWarningSummary(warnings),
     failures,
     retry: buildRetryPlan('download-doc', failures.map((item) => item.url).filter(isString), options)
   }
@@ -393,4 +395,24 @@ function buildRetryPlan(command: 'download-doc', urls: string[], options: Downlo
 
 function isString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0
+}
+
+function buildWarningSummary(warnings: DownloadWarning[]): DownloadWarningSummary {
+  const byType: Record<string, number> = {}
+  for (const warning of warnings) {
+    byType[warning.type] = (byType[warning.type] || 0) + 1
+  }
+  return {
+    total: warnings.length,
+    by_type: byType,
+    retryable_resources: warnings
+      .filter((warning) => warning.type !== 'link' && Boolean(warning.url))
+      .map((warning) => ({
+        type: warning.type,
+        title: warning.title,
+        url: warning.url!,
+        file: warning.file,
+        error: warning.error
+      }))
+  }
 }
