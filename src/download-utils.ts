@@ -137,6 +137,9 @@ export function parseSheet(sheetStr: string): string {
 }
 
 function sheetInflateInput(sheetStr: string): Uint8Array {
+  if (/^[\x00-\xff]*$/.test(sheetStr)) {
+    return Uint8Array.from(sheetStr, (char) => char.charCodeAt(0))
+  }
   try {
     return Buffer.from(sheetStr, 'base64')
   } catch {
@@ -436,7 +439,7 @@ function parseHtmlMediaCards(htmlData: string, type: 'audio' | 'video'): Array<{
   return result
 }
 
-function captureImageUrl(url: string, imageServiceDomains: string[]): string {
+export function captureImageUrl(url: string, imageServiceDomains: string[]): string {
   try {
     const { host, pathname } = new URL(url)
     if (imageServiceDomains.includes(host) || !pathname) return url

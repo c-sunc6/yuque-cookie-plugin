@@ -88,6 +88,8 @@ Still being improved:
 
 ## Research Memory
 
+- `docs/usage-zh.md` is the Chinese usage guide for installing, logging in, downloading, previewing, snapshotting, serializing, and safely writing Yuque documents.
+- `docs/yuque-dl-test-migration.md` tracks the yuque-dl test migration status and remaining parity gaps.
 - `docs/principles.md` is the project constitution: why web-session automation exists and what design tradeoffs are non-negotiable.
 - `docs/project-memory.md` keeps the current project direction, verified Yuque web flow, and safety rules.
 - `docs/development-plan.md` keeps the phased development roadmap, technical design, and iteration log.
