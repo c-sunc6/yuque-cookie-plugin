@@ -41,6 +41,7 @@ npm run real:acceptance -- \
 - 第一次 `download-book --incremental --quiet`。
 - 第二次 `download-book --incremental --quiet`，验证未变化文档跳过。
 - 检查 `index.md` 和 `progress.json` 是否生成。
+- 检查 `resources.files` 中的本地图片和附件是否存在。
 - 输出并保存 JSON 报告到 `reports/real-acceptance-*.json`。
 
 ## 单篇或多篇验收
@@ -59,6 +60,8 @@ npm run real:acceptance -- \
 - `download-doc-file-1.ok`
 - `download-doc-file-1.size`
 - `download-doc-file-1.preview`
+- `download-doc.resources`
+- `download-doc-resource-1.ok`
 
 如果有多个 `--doc-url`，会按下载结果依次生成 `download-doc-file-N` 检查项。
 
@@ -77,6 +80,9 @@ npm run real:acceptance -- \
 - `download-doc.warning_summary.total`
 - `download-doc.warning_summary.by_type`
 - `download-doc.warning_summary.retryable_resources`
+- `download-doc.resources.total`
+- `download-doc.resources.by_type`
+- `download-doc.resources.files`
 - `download-doc.retry`
 
 判断方式：
@@ -86,6 +92,7 @@ npm run real:acceptance -- \
 - `warning_summary.by_type.image > 0`：图片资源有下载失败。
 - `warning_summary.by_type.attachment > 0`：附件资源有下载失败。
 - `retryable_resources` 中的 `url` 是后续人工排查或单独补下载的依据。
+- `resources.files` 是已经成功落盘的资源清单，脚本会追加 `download-doc-resource-N` 或 `download-book-resource-N` 文件检查项。
 
 注意：`download-doc.retry` 只针对失败文档 URL；资源级失败目前通过 `warning_summary.retryable_resources` 汇总，还没有独立的资源重试命令。
 

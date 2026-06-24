@@ -235,6 +235,7 @@ Tests       71 passed
 - 支持重复 `--doc-url` 做单篇/多篇文档验收。
 - 单文档验收会检查每个下载出的 Markdown 文件是否存在、非空，并记录预览片段。
 - 单文档验收会提升 `warning_summary`、`retry` 和下载器报告路径，便于检查音视频、图片、附件资源失败。
+- 整库和单文档验收会提升 `resources` manifest，并对 `resources.files` 中的本地资源逐个做存在性检查。
 - 验收报告写入 `reports/real-acceptance-*.json`，不保存 Cookie。
 
 ## 尚未迁移的 yuque-dl 测试

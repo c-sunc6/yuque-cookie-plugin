@@ -61,6 +61,9 @@ async function main(): Promise<void> {
       skipped: first.skipped,
       failures: first.failures,
       warnings: first.warnings,
+      warning_summary: first.warning_summary,
+      resources: first.resources,
+      report: first.report,
       book_path: first.book_path
     })
 
@@ -77,12 +80,18 @@ async function main(): Promise<void> {
       skipped: second.skipped,
       failures: second.failures,
       warnings: second.warnings,
+      warning_summary: second.warning_summary,
+      resources: second.resources,
+      report: second.report,
       book_path: second.book_path
     })
 
     const bookPath = String(first.book_path || '')
     checks.push(await fileCheck('book-index', path.join(bookPath, 'index.md')))
     checks.push(await fileCheck('book-progress', path.join(bookPath, 'progress.json')))
+    for (const [index, resource] of resourceFiles(first.resources).entries()) {
+      checks.push(await fileCheck(`download-book-resource-${index + 1}`, path.join(bookPath, resource.path)))
+    }
   }
 
   if (flags.docUrl?.length) {
@@ -99,11 +108,15 @@ async function main(): Promise<void> {
       failures: docs.failures,
       warnings: docs.warnings,
       warning_summary: docs.warning_summary,
+      resources: docs.resources,
       retry: docs.retry,
       report: docs.report
     })
     for (const [index, file] of files.entries()) {
       checks.push(await fileCheck(`download-doc-file-${index + 1}`, file))
+    }
+    for (const [index, resource] of resourceFiles(docs.resources).entries()) {
+      checks.push(await fileCheck(`download-doc-resource-${index + 1}`, path.join(distDir, resource.path)))
     }
   }
 
@@ -148,6 +161,15 @@ function requireValue(argv: string[], index: number, flag: string): string {
 
 function isString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0
+}
+
+function resourceFiles(resources: unknown): Array<{ path: string }> {
+  if (!resources || typeof resources !== 'object') return []
+  const files = (resources as { files?: unknown }).files
+  if (!Array.isArray(files)) return []
+  return files.filter((item): item is { path: string } => {
+    return Boolean(item) && typeof item === 'object' && isString((item as { path?: unknown }).path)
+  })
 }
 
 async function fileCheck(step: string, file: string): Promise<Record<string, unknown>> {
