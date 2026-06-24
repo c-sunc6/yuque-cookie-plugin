@@ -27,6 +27,16 @@ describe('YuqueCookieClient with MSW mocks', () => {
     })
   })
 
+  it('getDocInfoFromUrl throws when appData has no doc field', async () => {
+    const client = new YuqueCookieClient({ session: 'session', ctoken: 'ctoken' })
+    await expect(client.getDocInfoFromUrl('https://www.yuque.com/yuque/no-doc')).rejects.toThrow('Failed to get document info from URL')
+  })
+
+  it('fetchAppData throws when page cannot be parsed', async () => {
+    const client = new YuqueCookieClient({ session: 'session', ctoken: 'ctoken' })
+    await expect(client.inspect('http://localhost/404')).rejects.toThrow('Failed to parse appData')
+  })
+
   it('getDocMarkdownData reads mocked markdown API data', async () => {
     const client = new YuqueCookieClient({ session: 'session', ctoken: 'ctoken' })
     const data = await client.getDocMarkdownData({ articleUrl: 'testdoc', bookId: 41966892 })

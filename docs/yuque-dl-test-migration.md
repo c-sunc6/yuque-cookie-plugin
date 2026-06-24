@@ -26,7 +26,7 @@ npm test
 
 ```text
 Test Files  10 passed
-Tests       36 passed
+Tests       43 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -45,6 +45,7 @@ Tests       36 passed
 - `fixMarkdownImage`
 - `fixPath`
 - `fixInlineCode`
+- `fixInlineCode` complex markdown/html combinations
 - `captureImageUrl`
 - `getMarkdownImageList`
 - `removeEmojis`
@@ -75,6 +76,8 @@ Tests       36 passed
 - `inspect`
 - `getDocInfoFromUrl`
 - `getDocMarkdownData`
+- appData 无 doc 字段错误
+- appData 解析失败错误
 
 ### Lake parser
 

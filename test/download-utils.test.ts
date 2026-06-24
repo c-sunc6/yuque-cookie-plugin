@@ -71,6 +71,30 @@ describe('download utils migrated from yuque-dl', () => {
     expect(fixInlineCode(mdData, htmlData)).toBe('`<font style="color:#FBDE28;">123</font>`')
   })
 
+  it('fixInlineCode converts html plus markdown when Yuque rendered formatting', () => {
+    const mdData = '`**<font style="color:#DF2A3F;">123</font>**`'
+    const htmlData = '<code class="ne-code"><strong><span class="ne-text" style="color: #DF2A3F">123</span></strong></code>'
+    expect(fixInlineCode(mdData, htmlData)).toBe('<code>**<font style="color:#DF2A3F;">123</font>**</code>')
+  })
+
+  it('fixInlineCode keeps html plus markdown when Yuque escaped it literally', () => {
+    const mdData = '`**<font style="color:#FBDE28;">123</font>**`'
+    const htmlData = '<code class="ne-code"><span class="ne-text">**&lt;font style=&quot;color:#FBDE28;&quot;&gt;123&lt;/font&gt;**</span></code>'
+    expect(fixInlineCode(mdData, htmlData)).toBe('`**<font style="color:#FBDE28;">123</font>**`')
+  })
+
+  it('fixInlineCode converts nested markdown/html formatting', () => {
+    const mdData = '`~~_**<u><font style="color:#DF2A3F;">123213</font></u>**_~~`'
+    const htmlData = '<code class="ne-code"><em><strong><span class="ne-text" style="color: #DF2A3F; text-decoration: underline line-through">123213</span></strong></em></code>'
+    expect(fixInlineCode(mdData, htmlData)).toBe('<code>~~_**<u><font style="color:#DF2A3F;">123213</font></u>**_~~</code>')
+  })
+
+  it('fixInlineCode keeps nested markdown/html when escaped literally', () => {
+    const mdData = '`~~_**<u><font style="color:#DF2A3F;">123213</font></u>**_~~`'
+    const htmlData = '<code class="ne-code"><span class="ne-text">~~_**&lt;u&gt;&lt;font style=&quot;color:#DF2A3F;&quot;&gt;123213&lt;/font&gt;&lt;/u&gt;**_~~</span></code>'
+    expect(fixInlineCode(mdData, htmlData)).toBe('`~~_**<u><font style="color:#DF2A3F;">123213</font></u>**_~~`')
+  })
+
   it('captureImageUrl keeps Yuque image service URLs and signs external URLs', () => {
     expect(captureImageUrl('https://www.abc.com/1.jpg', ['www.abc.com'])).toBe('https://www.abc.com/1.jpg')
     const external = captureImageUrl('https://www.baidu2.com/logo.jpg', ['www.abc.com'])

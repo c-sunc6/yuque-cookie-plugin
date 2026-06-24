@@ -49,6 +49,11 @@ export const handlers = [
     })
   }),
   http.get('https://www.yuque.com/yuque/base1', () => appDataHtml(appData)),
+  http.get('https://www.yuque.com/yuque/no-doc', () => {
+    const data = structuredClone(appData)
+    delete (data as any).doc
+    return appDataHtml(data)
+  }),
   http.get('https://www.yuque.com/yuque/title-doc', () => {
     const titleDocData = structuredClone(appData)
     titleDocData.book.slug = 'title-doc'
