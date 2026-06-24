@@ -4,7 +4,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import markdownToc from 'markdown-toc'
 import pako from 'pako'
-import type { DownloadOptions, ProgressItem, YuqueTocItem } from './types.ts'
+import type { DownloadOptions, DownloadWarning, ProgressItem, YuqueTocItem } from './types.ts'
 
 const IMAGE_SIGN_KEY = 'UXO91eVnUveQn8suOJaYMvBcWs9KptS8N5HoP8ezSeU4vqApZpy1CkPaTpkpQEx2W2mlhxL8zwS8UePwBgksUM0CTtAODbTTTDFD'
 
@@ -269,6 +269,8 @@ export async function localizeImages(markdown: string, params: {
   referer: string
   headers: Record<string, string>
   imageServiceDomains: string[]
+  warnings?: DownloadWarning[]
+  title?: string
 }): Promise<string> {
   let data = markdown
   const urls = getMarkdownImageList(markdown)
@@ -288,8 +290,14 @@ export async function localizeImages(markdown: string, params: {
         }
       })
       data = data.replace(rawUrl, relPath)
-    } catch {
-      // Keep remote URL if download fails.
+    } catch (error) {
+      params.warnings?.push({
+        type: 'image',
+        title: params.title,
+        url,
+        file: fullPath,
+        error: error instanceof Error ? error.message : String(error)
+      })
     }
   }
   return data
@@ -300,6 +308,8 @@ export async function localizeAttachments(markdown: string, params: {
   attachmentsDir: string
   headers: Record<string, string>
   ignoreAttachments: boolean | string
+  warnings?: DownloadWarning[]
+  title?: string
 }): Promise<string> {
   if (params.ignoreAttachments === true) return markdown
   const attachmentReg = /\[(.*?)\]\((https?:\/\/.*?\.yuque\.com\/attachments.*?)\)/g
@@ -316,8 +326,14 @@ export async function localizeAttachments(markdown: string, params: {
     try {
       await downloadFile({ url, file: fullPath, headers: params.headers })
       data = data.replace(raw, `[附件: ${fileName}](${relPath})`)
-    } catch {
-      // Keep original URL if download fails.
+    } catch (error) {
+      params.warnings?.push({
+        type: 'attachment',
+        title: params.title,
+        url,
+        file: fullPath,
+        error: error instanceof Error ? error.message : String(error)
+      })
     }
   }
   return data
@@ -329,6 +345,8 @@ export async function localizeMedia(markdown: string, htmlData: string, params: 
   headers: Record<string, string>
   ignoreAttachments: boolean | string
   getVideoInfo: (videoId: string) => Promise<Record<string, any> | false>
+  warnings?: DownloadWarning[]
+  title?: string
 }): Promise<string> {
   if (params.ignoreAttachments === true) return markdown
   let data = markdown
@@ -350,8 +368,14 @@ export async function localizeMedia(markdown: string, htmlData: string, params: 
       await downloadFile({ url, file: fullPath, headers: params.headers })
       if (item.raw) data = data.replace(item.raw, `[音视频附件: ${fileName}](${relPath})`)
       else data += `\n\n[音视频附件: ${fileName}](${relPath})\n`
-    } catch {
-      // Keep original if download fails.
+    } catch (error) {
+      params.warnings?.push({
+        type: 'media',
+        title: params.title,
+        url,
+        file: fullPath,
+        error: error instanceof Error ? error.message : String(error)
+      })
     }
   }
   return data

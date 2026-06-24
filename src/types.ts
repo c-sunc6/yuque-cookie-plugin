@@ -144,6 +144,14 @@ export interface DownloadOptions {
   quiet: boolean
 }
 
+export interface DownloadWarning {
+  type: 'image' | 'attachment' | 'media'
+  title?: string
+  url?: string
+  file?: string
+  error: string
+}
+
 export interface ProgressItem {
   path: string
   savePath?: string

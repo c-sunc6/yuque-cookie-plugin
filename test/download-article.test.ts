@@ -5,7 +5,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { server } from './mocks/server.ts'
 import { YuqueCookieClient } from '../src/client-cookie.ts'
 import { downloadArticleForTest } from '../src/downloader.ts'
-import type { DownloadOptions, ProgressItem } from '../src/types.ts'
+import type { DownloadOptions, DownloadWarning, ProgressItem } from '../src/types.ts'
 
 let cwd = ''
 let client: YuqueCookieClient
@@ -124,6 +124,35 @@ describe('downloadArticle migrated coverage', () => {
     const markdown = await readFile(saveFilePath, 'utf8')
     expect(markdown).toContain('img/img_dir_uuid/')
     expect(markdown).toContain('attachments/img_dir_uuid/')
+  })
+
+  it('collects attachment download warnings without failing the article', async () => {
+    const saveFilePath = path.join(cwd, 'attachments-error.md')
+    const warnings: DownloadWarning[] = []
+    const result = await downloadArticleForTest(client, {
+      bookId: 1111,
+      itemUrl: 'attachments-error',
+      savePath: cwd,
+      saveFilePath,
+      uuid: 'attachments-error',
+      articleTitle: 'Attachments Error Title',
+      articleUrl: 'https://www.yuque.com/yuque/base1/attachments-error',
+      host: 'https://www.yuque.com',
+      imageServiceDomains: [],
+      options: options(),
+      progressItem: progress('attachments-error'),
+      warnings
+    })
+    expect(result.skipped).toBe(false)
+    expect(await readFile(saveFilePath, 'utf8')).toContain('[error.pdf](https://www.yuque.com/attachments/error.pdf)')
+    expect(warnings).toEqual([
+      expect.objectContaining({
+        type: 'attachment',
+        title: 'Attachments Error Title',
+        url: 'https://www.yuque.com/attachments/error.pdf',
+        error: expect.stringContaining('download failed: 404')
+      })
+    ])
   })
 
   it('skips unchanged documents in incremental mode', async () => {

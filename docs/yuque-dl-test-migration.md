@@ -26,7 +26,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       48 passed
+Tests       49 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -139,6 +139,7 @@ Tests       48 passed
 - Yuque 附件下载
 - 附件链接改写
 - 附件下载失败时保留原始链接
+- 附件下载失败时记录 `warnings`
 - 指定后缀忽略
 
 ### list / summary
@@ -230,8 +231,7 @@ yuque-dl 支持 `-k --key` 和 `-t --token`。本项目核心路线仍是 `_yuqu
 
 ## 下一步
 
-1. 扩展 `download/article` 对附件失败报告的测试。
-2. 迁移 yuque-dl snapshot 测试，或改造成更稳定的结构化断言。
-3. 决定是否实现 yuque-dl 的 `ProgressBar` parity，或将测试改为本项目的 stderr progress 模式。
-4. 继续补 `test/cli.test.ts` 中尚未覆盖的 server/CLI 细节。
-5. 评估 `test/realRequest.test.ts` 是否适合作为手动真实验收脚本，而不是默认自动测试。
+1. 迁移 yuque-dl snapshot 测试，或改造成更稳定的结构化断言。
+2. 决定是否实现 yuque-dl 的 `ProgressBar` parity，或将测试改为本项目的 stderr progress 模式。
+3. 继续补 `test/cli.test.ts` 中尚未覆盖的 server/CLI 细节。
+4. 评估 `test/realRequest.test.ts` 是否适合作为手动真实验收脚本，而不是默认自动测试。

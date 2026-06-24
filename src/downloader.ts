@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { YuqueCookieClient } from './client-cookie.ts'
 import { writeReport } from './reports.ts'
-import type { DownloadOptions, ProgressItem, YuqueTocItem } from './types.ts'
+import type { DownloadOptions, DownloadWarning, ProgressItem, YuqueTocItem } from './types.ts'
 import {
   buildTocMaps,
   fixInlineCode,
@@ -33,6 +33,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
   const progressItems: ProgressItem[] = []
   const articleUrlPrefix = url.replace(new RegExp(`(.*?/${book.bookSlug}).*`), '$1')
   const failures: Array<{ title: string; url?: string; error: string }> = []
+  const warnings: DownloadWarning[] = []
   let downloaded = 0
   let skipped = 0
   let handledDocs = 0
@@ -65,7 +66,8 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
         imageServiceDomains: book.imageServiceDomains,
         options,
         progressItem,
-        previousProgressItem: previous.get(item.uuid)
+        previousProgressItem: previous.get(item.uuid),
+        warnings
       })
       if (articleResult.skipped) {
         skipped += 1
@@ -104,6 +106,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
     skipped,
     incremental: options.incremental,
     options,
+    warnings,
     failures
   }
   const report = await writeReport('download-book', summary)
@@ -117,6 +120,7 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
   const distPath = path.resolve(options.distDir)
   await mkdir(distPath, { recursive: true })
   const failures: Array<{ url: string; error: string }> = []
+  const warnings: DownloadWarning[] = []
   const files: string[] = []
   let downloaded = 0
   logProgress(options, `Downloading ${urls.length} doc(s) -> ${distPath}`)
@@ -153,7 +157,8 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
         host: doc.host,
         imageServiceDomains: doc.imageServiceDomains,
         options,
-        progressItem
+        progressItem,
+        warnings
       })
       downloaded += 1
       files.push(saveFilePath)
@@ -173,6 +178,7 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
     files,
     downloaded,
     options,
+    warnings,
     failures
   }
   const report = await writeReport('download-doc', summary)
@@ -195,6 +201,7 @@ export async function downloadArticleForTest(client: YuqueCookieClient, params: 
   options: DownloadOptions
   progressItem: ProgressItem
   previousProgressItem?: ProgressItem
+  warnings?: DownloadWarning[]
 }): Promise<{ skipped: boolean }> {
   const { response, apiUrl, httpStatus } = await client.getDocMarkdownData({
     articleUrl: params.itemUrl,
@@ -250,7 +257,9 @@ export async function downloadArticleForTest(client: YuqueCookieClient, params: 
       savePath: params.savePath,
       attachmentsDir: `attachments/${fixPath(params.uuid)}`,
       headers: client.htmlHeaders(),
-      ignoreAttachments: params.options.ignoreAttachments
+      ignoreAttachments: params.options.ignoreAttachments,
+      warnings: params.warnings,
+      title: params.articleTitle
     })
   }
 
@@ -260,7 +269,9 @@ export async function downloadArticleForTest(client: YuqueCookieClient, params: 
       attachmentsDir: `attachments/${fixPath(params.uuid)}`,
       headers: client.htmlHeaders(),
       ignoreAttachments: params.options.ignoreAttachments,
-      getVideoInfo: (videoId) => client.getVideoInfo(videoId)
+      getVideoInfo: (videoId) => client.getVideoInfo(videoId),
+      warnings: params.warnings,
+      title: params.articleTitle
     })
   }
 
@@ -270,7 +281,9 @@ export async function downloadArticleForTest(client: YuqueCookieClient, params: 
       imageDir: `img/${fixPath(params.uuid)}`,
       referer: params.articleUrl,
       headers: client.htmlHeaders(),
-      imageServiceDomains: params.imageServiceDomains
+      imageServiceDomains: params.imageServiceDomains,
+      warnings: params.warnings,
+      title: params.articleTitle
     })
   }
 

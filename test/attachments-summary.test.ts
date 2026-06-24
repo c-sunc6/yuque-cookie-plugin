@@ -4,7 +4,7 @@ import path from 'node:path'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { server } from './mocks/server.ts'
 import { localizeAttachments, writeSummary } from '../src/download-utils.ts'
-import type { ProgressItem } from '../src/types.ts'
+import type { DownloadWarning, ProgressItem } from '../src/types.ts'
 
 let cwd = ''
 
@@ -34,13 +34,24 @@ describe('attachments and summary migrated coverage', () => {
 
   it('localizeAttachments keeps original link when download fails', async () => {
     const markdown = '# test\n\n[error.pdf](https://www.yuque.com/attachments/error.pdf)\n'
+    const warnings: DownloadWarning[] = []
     const result = await localizeAttachments(markdown, {
       savePath: cwd,
       attachmentsDir: 'attachments/123456789',
       headers: {},
-      ignoreAttachments: false
+      ignoreAttachments: false,
+      warnings,
+      title: 'Attachment Article'
     })
     expect(result).toContain('[error.pdf](https://www.yuque.com/attachments/error.pdf)')
+    expect(warnings).toEqual([
+      expect.objectContaining({
+        type: 'attachment',
+        title: 'Attachment Article',
+        url: 'https://www.yuque.com/attachments/error.pdf',
+        error: expect.stringContaining('download failed: 404')
+      })
+    ])
   })
 
   it('localizeAttachments supports extension ignore lists', async () => {

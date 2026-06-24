@@ -105,6 +105,12 @@ export const handlers = [
     })
   }),
   http.get('https://www.yuque.com/api/docs/attachments', () => HttpResponse.json(attachmentsDocMdData)),
+  http.get('https://www.yuque.com/api/docs/attachments-error', () => HttpResponse.json({
+    data: {
+      type: 'Doc',
+      sourcecode: '# DOC1\n\n[error.pdf](https://www.yuque.com/attachments/error.pdf)'
+    }
+  })),
   http.get('https://www.yuque.com/yuque/testbook/testdoc', () => appDataHtml(singleDocData)),
   http.get('https://www.yuque.com/api/docs/testdoc', ({ request }) => {
     const url = new URL(request.url)
