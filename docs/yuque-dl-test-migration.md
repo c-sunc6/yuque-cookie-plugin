@@ -27,7 +27,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       66 passed
+Tests       67 passed
 ```
 
 ## 已迁移的测试覆盖
