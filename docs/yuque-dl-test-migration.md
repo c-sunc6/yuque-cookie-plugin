@@ -26,7 +26,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       51 passed
+Tests       54 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -187,6 +187,10 @@ Tests       51 passed
 - sidebar 按 `progress.json` 顺序
 - 目录 `index.md` link
 - 忽略 `img/`、`attachments/`、`progress.json`
+- `serveBook` 传递 host/port 给 VitePress
+- 已存在 `.vitepress` 时默认不覆盖
+- `force` 时重新生成 `.vitepress/config.mjs`
+- 不存在的 book path 会失败
 
 ### media cards
 

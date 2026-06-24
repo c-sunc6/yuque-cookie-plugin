@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { createVitePressConfigForTest } from '../src/serve-book.ts'
+import { createVitePressConfigForTest, serveBook } from '../src/serve-book.ts'
 import type { ProgressItem } from '../src/types.ts'
 
 let cwd = ''
@@ -41,7 +41,62 @@ describe('serve-book VitePress config', () => {
     expect(config.indexOf('"text": "B"')).toBeLessThan(config.indexOf('"text": "A"'))
     expect(config).not.toContain('ignore')
   })
+
+  it('starts VitePress with configured host and port', async () => {
+    const calls: Array<{ root: string; options: Record<string, unknown> }> = []
+    const server = fakeServer()
+    await serveBook(cwd, {
+      host: '127.0.0.1',
+      port: 6188,
+      createServer: async (root, options) => {
+        calls.push({ root, options })
+        return server as any
+      }
+    })
+    expect(calls).toEqual([
+      {
+        root: cwd,
+        options: {
+          host: '127.0.0.1',
+          port: 6188
+        }
+      }
+    ])
+    expect(server.listenCalls).toBe(1)
+    expect(server.printUrlsCalls).toBe(1)
+  })
+
+  it('keeps existing VitePress config unless force is enabled', async () => {
+    await mkdir(path.join(cwd, '.vitepress'), { recursive: true })
+    const configPath = path.join(cwd, '.vitepress/config.mjs')
+    await writeFile(configPath, 'custom config')
+
+    await serveBook(cwd, { createServer: async () => fakeServer() as any })
+    expect(await readFile(configPath, 'utf8')).toBe('custom config')
+
+    await serveBook(cwd, { force: true, createServer: async () => fakeServer() as any })
+    expect(await readFile(configPath, 'utf8')).toContain('themeConfig')
+  })
+
+  it('fails when the book path does not exist', async () => {
+    await expect(serveBook(path.join(cwd, 'missing'), {
+      createServer: async () => fakeServer() as any
+    })).rejects.toThrow()
+  })
 })
+
+function fakeServer(): { listenCalls: number; printUrlsCalls: number; listen: () => Promise<void>; printUrls: () => void } {
+  return {
+    listenCalls: 0,
+    printUrlsCalls: 0,
+    async listen() {
+      this.listenCalls += 1
+    },
+    printUrls() {
+      this.printUrlsCalls += 1
+    }
+  }
+}
 
 function progress(file: string, title: string, uuid: string, parent: string): ProgressItem {
   return {

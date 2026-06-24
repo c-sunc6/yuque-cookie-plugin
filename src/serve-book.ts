@@ -3,7 +3,19 @@ import path from 'node:path'
 import { createServer } from 'vitepress'
 import type { ProgressItem } from './types.ts'
 
-export async function serveBook(root: string, options: { port?: number; host?: string | boolean; force?: boolean } = {}): Promise<void> {
+export interface ServeBookOptions {
+  port?: number
+  host?: string | boolean
+  force?: boolean
+  createServer?: typeof createServer
+}
+
+export interface ServeBookServer {
+  listen: () => Promise<unknown> | unknown
+  printUrls: () => void
+}
+
+export async function serveBook(root: string, options: ServeBookOptions = {}): Promise<ServeBookServer> {
   const rootPath = path.resolve(root)
   await access(rootPath)
   const vitepressPath = path.join(rootPath, '.vitepress')
@@ -16,12 +28,14 @@ export async function serveBook(root: string, options: { port?: number; host?: s
       await createVitePressConfigForTest(rootPath)
     }
   }
-  const server = await createServer(rootPath, {
+  const createVitePressServer = options.createServer || createServer
+  const server = await createVitePressServer(rootPath, {
     host: options.host || 'localhost',
     port: Number(options.port || 5173)
   })
   await server.listen()
   server.printUrls()
+  return server
 }
 
 export async function createVitePressConfigForTest(root: string): Promise<void> {
