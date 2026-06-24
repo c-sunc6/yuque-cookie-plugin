@@ -112,5 +112,31 @@ export const handlers = [
       })
     }
     return HttpResponse.json({})
-  })
+  }),
+  http.get('https://www.yuque.com/yuque/testbook/testdoc2', () => {
+    const data = structuredClone(singleDocData)
+    data.doc.id = 123457
+    data.doc.slug = 'testdoc2'
+    data.doc.title = '测试文档2'
+    data.doc.book_id = 41966892
+    return appDataHtml(data)
+  }),
+  http.get('https://www.yuque.com/api/docs/testdoc2', ({ request }) => {
+    const url = new URL(request.url)
+    if (url.searchParams.get('book_id') === '41966892') {
+      const data = structuredClone(singleDocMdData)
+      data.data.id = 123457
+      data.data.slug = 'testdoc2'
+      data.data.title = '测试文档2'
+      data.data.sourcecode = '# 测试文档2\n\n这是第二个测试文档的内容。'
+      return HttpResponse.json(url.searchParams.get('mode') ? data : {
+        data: {
+          ...data.data,
+          content: '<p>测试文档2的HTML内容</p>'
+        }
+      })
+    }
+    return HttpResponse.json({})
+  }),
+  http.get('https://www.yuque.com/yuque/testbook/notfound', () => new HttpResponse('Not found', { status: 404 }))
 ]
