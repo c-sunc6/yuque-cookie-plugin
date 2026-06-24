@@ -49,7 +49,16 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
       await mkdir(path.resolve(bookPath, progressItem.path), { recursive: true })
       continue
     }
-    if (!item.url || itemType === 'link') continue
+    if (itemType === 'link') {
+      warnings.push({
+        type: 'link',
+        title: item.title,
+        url: item.url,
+        error: 'TOC link node is not a Yuque document and was not downloaded.'
+      })
+      continue
+    }
+    if (!item.url) continue
 
     try {
       const articleUrl = `${articleUrlPrefix}/${item.url}`
@@ -101,7 +110,10 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
     ok: failures.length === 0,
     book_path: bookPath,
     total: progressItems.length,
-    docs: progressItems.filter((item) => item.path.endsWith('.md')).length,
+    docs: progressItems.filter((item) => {
+      const type = item.toc.type?.toLowerCase()
+      return type !== 'title' && type !== 'link' && item.path.endsWith('.md')
+    }).length,
     downloaded,
     skipped,
     incremental: options.incremental,
@@ -317,6 +329,15 @@ function buildProgressItem(item: YuqueTocItem, tocMap: Map<string, YuqueTocItem>
     }
   }
   if (!item.url) return null
+  if (type === 'link') {
+    return {
+      path: pathTitleList.join('/'),
+      savePath: pathTitleList.slice(0, -1).join('/'),
+      pathTitleList,
+      pathIdList,
+      toc: item
+    }
+  }
   let mdPath = `${pathTitleList.join('/')}.md`
   let savePath = pathTitleList.slice(0, -1).join('/')
   if (type === 'doc' && item.child_uuid) {

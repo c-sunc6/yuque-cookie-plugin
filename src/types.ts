@@ -145,7 +145,7 @@ export interface DownloadOptions {
 }
 
 export interface DownloadWarning {
-  type: 'image' | 'attachment' | 'media'
+  type: 'image' | 'attachment' | 'media' | 'link'
   title?: string
   url?: string
   file?: string

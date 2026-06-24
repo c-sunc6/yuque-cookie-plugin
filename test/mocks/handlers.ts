@@ -78,6 +78,37 @@ export const handlers = [
     ]
     return appDataHtml(titleDocData)
   }),
+  http.get('https://www.yuque.com/yuque/with-link', () => {
+    const data = structuredClone(appData)
+    data.book.slug = 'with-link'
+    data.book.name = 'Book With Link'
+    data.book.toc = [
+      {
+        type: 'TITLE',
+        title: 'Title1',
+        uuid: '001',
+        child_uuid: '002',
+        parent_uuid: ''
+      },
+      {
+        type: 'DOC',
+        title: '文档1',
+        uuid: '002',
+        url: 'one',
+        child_uuid: '',
+        parent_uuid: '001'
+      },
+      {
+        type: 'LINK',
+        title: '外部资料',
+        uuid: 'link-001',
+        url: 'https://example.com/reference',
+        child_uuid: '',
+        parent_uuid: ''
+      }
+    ]
+    return appDataHtml(data)
+  }),
   http.get('https://www.yuque.com/api/docs/one', ({ request }) => {
     const url = new URL(request.url)
     return HttpResponse.json(url.searchParams.get('mode') ? docMdData : { data: { content: '<p>one</p>' } })

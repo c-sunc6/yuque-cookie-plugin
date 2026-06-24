@@ -98,6 +98,34 @@ describe('downloadBook list/summary coverage', () => {
     expect(await readFile(path.join(bookPath, 'Title1 文档/文档1.md'), 'utf8')).toContain('# 文档1')
   })
 
+  it('keeps TOC link nodes in the summary without downloading them', async () => {
+    const result = await downloadBook(client, 'https://www.yuque.com/yuque/with-link', options())
+    expect(result).toMatchObject({
+      ok: true,
+      total: 3,
+      docs: 1,
+      downloaded: 1,
+      skipped: 0,
+      failures: [],
+      warnings: [
+        {
+          type: 'link',
+          title: '外部资料',
+          url: 'https://example.com/reference'
+        }
+      ]
+    })
+    const bookPath = String(result.book_path)
+    const summary = await readFile(path.join(bookPath, 'index.md'), 'utf8')
+    expect(summary).toContain('## [外部资料](https://example.com/reference)')
+    const progress = JSON.parse(await readFile(path.join(bookPath, 'progress.json'), 'utf8'))
+    expect(progress.map((item: { path: string }) => item.path)).toEqual([
+      'Title1',
+      'Title1/文档1.md',
+      '外部资料'
+    ])
+  })
+
   it('skips unchanged docs on a second incremental run', async () => {
     await downloadBook(client, 'https://www.yuque.com/yuque/base1', options({ incremental: true }))
     const result = await downloadBook(client, 'https://www.yuque.com/yuque/base1', options({ incremental: true }))

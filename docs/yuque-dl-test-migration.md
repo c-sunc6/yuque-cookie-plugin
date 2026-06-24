@@ -27,7 +27,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       57 passed
+Tests       58 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -164,6 +164,7 @@ Tests       57 passed
 - `progress.json` 路径、标题链路、更新时间字段
 - 本地图片数量和文件大小
 - 第二次增量下载跳过未变文档
+- TOC `LINK` 节点不下载，但会保留到 `index.md` 外部链接并记录 `warnings`
 
 ### download-doc
 
@@ -225,7 +226,7 @@ Tests       57 passed
 - `test/cli.test.ts`
 - 原 snapshot 测试
 - `download/article` 的 custom key token、音视频细节、失败信息 parity
-- `download/list` 的外链、警告、失败重试报告 parity
+- `download/list` 的失败重试报告 parity
 
 ## 已发现的差异
 

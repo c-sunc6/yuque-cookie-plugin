@@ -410,6 +410,8 @@ function renderSummaryTree(byParent: Map<string, ProgressItem[]>, parent: string
     const type = item.toc.type?.toLowerCase()
     if (type === 'title' && !item.path.endsWith('.md')) {
       content += `\n${'#'.repeat(level)} ${title}\n\n`
+    } else if (type === 'link') {
+      content += `${level <= 2 ? '\n##' : '-'} [${title}](${item.toc.url || item.path})\n`
     } else {
       const link = item.path.replace(/\s/g, '%20')
       content += `${level <= 2 ? '\n##' : '-'} [${title}](${link})\n`
