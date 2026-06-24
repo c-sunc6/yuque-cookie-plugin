@@ -27,7 +27,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       64 passed
+Tests       66 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -134,6 +134,8 @@ Tests       64 passed
 - sheet 文档转 Markdown
 - uuid 含特殊字符时的图片/附件目录清理
 - 增量模式跳过未变化文档
+- `hideFooter` 隐藏更新/原文 footer
+- `convertMarkdownVideoLinks` 将 Markdown mp4/mp3 链接转成 HTML `video` / `audio` 标签
 
 ### attachments
 

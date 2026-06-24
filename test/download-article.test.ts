@@ -3,6 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { server } from './mocks/server.ts'
+import { handleMarkdownFooter } from '../src/download-utils.ts'
 import { YuqueCookieClient } from '../src/client-cookie.ts'
 import { downloadArticleForTest } from '../src/downloader.ts'
 import type { DownloadOptions, DownloadWarning, ProgressItem } from '../src/types.ts'
@@ -176,6 +177,34 @@ describe('downloadArticle migrated coverage', () => {
       previousProgressItem
     })
     expect(result.skipped).toBe(true)
+  })
+
+  it('hides generated footers when hideFooter is enabled', () => {
+    const markdown = handleMarkdownFooter('# Source Title\n\nBody text', {
+      articleTitle: 'TOC Title',
+      articleUrl: 'https://www.yuque.com/yuque/base1/one',
+      toc: false,
+      articleUpdateTime: '2025-03-12 20:59:27',
+      hideFooter: true,
+      convertMarkdownVideoLinks: false
+    })
+    expect(markdown).toContain('# TOC Title')
+    expect(markdown).toContain('Body text')
+    expect(markdown).not.toContain('> 更新:')
+    expect(markdown).not.toContain('> 原文:')
+  })
+
+  it('converts markdown audio and video links into HTML tags', () => {
+    const markdown = handleMarkdownFooter('# Source Title\n\n[Video](https://cdn.example.com/video.mp4)\n[Audio](https://cdn.example.com/audio.mp3)', {
+      articleTitle: 'Media Title',
+      articleUrl: '',
+      toc: false,
+      articleUpdateTime: '',
+      hideFooter: true,
+      convertMarkdownVideoLinks: true
+    })
+    expect(markdown).toContain('<video controls width="800" alt="Video" src="https://cdn.example.com/video.mp4"></video>')
+    expect(markdown).toContain('<audio controls width="800" alt="Audio" src="https://cdn.example.com/audio.mp3"></audio>')
   })
 })
 
