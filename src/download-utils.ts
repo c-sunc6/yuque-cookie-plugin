@@ -16,7 +16,8 @@ export function normalizeDownloadOptions(flags: Record<string, unknown>): Downlo
     toc: Boolean(flags.toc),
     incremental: Boolean(flags.incremental),
     convertMarkdownVideoLinks: Boolean(flags.convertMarkdownVideoLinks),
-    hideFooter: Boolean(flags.hideFooter)
+    hideFooter: Boolean(flags.hideFooter),
+    quiet: Boolean(flags.quiet)
   }
 }
 

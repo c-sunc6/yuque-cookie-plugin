@@ -44,6 +44,7 @@ Options:
   --toc                  Add markdown table of contents per document
   --incremental          Skip unchanged docs based on progress.json
   --hide-footer          Do not append update/original footer
+  --quiet                Suppress downloader progress lines; final JSON remains
   --port <port>          serve-book port, default: 5173
   --host <host>          serve-book host, default: localhost
   --force                Recreate VitePress config

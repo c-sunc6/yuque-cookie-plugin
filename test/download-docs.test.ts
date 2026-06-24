@@ -63,6 +63,7 @@ function options(overrides: Partial<DownloadOptions> = {}): DownloadOptions {
     incremental: false,
     convertMarkdownVideoLinks: false,
     hideFooter: false,
+    quiet: true,
     ...overrides
   }
 }

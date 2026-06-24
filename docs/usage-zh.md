@@ -263,6 +263,12 @@ npm run yuque-local -- format-article https://www.yuque.com/user/book/doc --html
 --convert-markdown-video-links
 ```
 
+关闭下载过程中的逐篇进度，只保留最后 JSON：
+
+```bash
+--quiet
+```
+
 ## 12. 安全规则
 
 - 不要把真实 `_yuque_session` 或 `yuque_ctoken` 写入项目文件。

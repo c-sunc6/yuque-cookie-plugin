@@ -37,7 +37,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
   let skipped = 0
   let handledDocs = 0
   const docTotal = book.tocList.filter((item) => item.type?.toLowerCase() !== 'title' && item.type?.toLowerCase() !== 'link' && item.url).length
-  logProgress(`Downloading book "${book.bookName || book.bookId}" (${docTotal} docs) -> ${bookPath}`)
+  logProgress(options, `Downloading book "${book.bookName || book.bookId}" (${docTotal} docs) -> ${bookPath}`)
 
   for (const item of book.tocList) {
     const progressItem = buildProgressItem(item, tocMap)
@@ -52,7 +52,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
 
     try {
       const articleUrl = `${articleUrlPrefix}/${item.url}`
-      logProgress(`[${handledDocs + 1}/${docTotal}] ${item.title}`)
+      logProgress(options, `[${handledDocs + 1}/${docTotal}] ${item.title}`)
       const articleResult = await downloadArticleForTest(client, {
         bookId: book.bookId,
         itemUrl: item.url,
@@ -69,13 +69,13 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
       })
       if (articleResult.skipped) {
         skipped += 1
-        logProgress(`  skipped unchanged: ${progressItem.path}`)
+        logProgress(options, `  skipped unchanged: ${progressItem.path}`)
       } else {
         downloaded += 1
-        logProgress(`  saved: ${progressItem.path}`)
+        logProgress(options, `  saved: ${progressItem.path}`)
       }
     } catch (error) {
-      logProgress(`  failed: ${item.title}`)
+      logProgress(options, `  failed: ${item.title}`)
       failures.push({
         title: item.title,
         url: item.url,
@@ -119,7 +119,7 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
   const failures: Array<{ url: string; error: string }> = []
   const files: string[] = []
   let downloaded = 0
-  logProgress(`Downloading ${urls.length} doc(s) -> ${distPath}`)
+  logProgress(options, `Downloading ${urls.length} doc(s) -> ${distPath}`)
 
   for (const [index, url] of urls.entries()) {
     try {
@@ -127,7 +127,7 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
       if (!doc.docSlug || !doc.bookId) throw new Error('Failed to get document info from URL')
       const fileName = fixPath(doc.docTitle || doc.docSlug)
       const saveFilePath = path.resolve(distPath, `${fileName}.md`)
-      logProgress(`[${index + 1}/${urls.length}] ${doc.docTitle || doc.docSlug}`)
+      logProgress(options, `[${index + 1}/${urls.length}] ${doc.docTitle || doc.docSlug}`)
       const progressItem: ProgressItem = {
         path: `${fileName}.md`,
         savePath: '',
@@ -157,9 +157,9 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
       })
       downloaded += 1
       files.push(saveFilePath)
-      logProgress(`  saved: ${saveFilePath}`)
+      logProgress(options, `  saved: ${saveFilePath}`)
     } catch (error) {
-      logProgress(`  failed: ${url}`)
+      logProgress(options, `  failed: ${url}`)
       failures.push({
         url,
         error: error instanceof Error ? error.message : String(error)
@@ -329,6 +329,7 @@ function getPathItems(item: YuqueTocItem, tocMap: Map<string, YuqueTocItem>): Yu
   return items
 }
 
-function logProgress(message: string): void {
+function logProgress(options: DownloadOptions, message: string): void {
+  if (options.quiet) return
   process.stderr.write(`${message}\n`)
 }

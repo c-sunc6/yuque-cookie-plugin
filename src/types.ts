@@ -137,6 +137,7 @@ export interface DownloadOptions {
   incremental: boolean
   convertMarkdownVideoLinks: boolean
   hideFooter: boolean
+  quiet: boolean
 }
 
 export interface ProgressItem {
