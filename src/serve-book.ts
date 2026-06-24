@@ -7,6 +7,7 @@ export interface ServeBookOptions {
   port?: number
   host?: string | boolean
   force?: boolean
+  configOnly?: boolean
   createServer?: typeof createServer
 }
 
@@ -15,17 +16,34 @@ export interface ServeBookServer {
   printUrls: () => void
 }
 
-export async function serveBook(root: string, options: ServeBookOptions = {}): Promise<ServeBookServer> {
+export interface ServeBookConfigResult {
+  root: string
+  config: string
+  generated: boolean
+}
+
+export async function serveBook(root: string, options: ServeBookOptions = {}): Promise<ServeBookServer | ServeBookConfigResult> {
   const rootPath = path.resolve(root)
   await access(rootPath)
   const vitepressPath = path.join(rootPath, '.vitepress')
+  let generated = false
   if (options.force) {
     await createVitePressConfigForTest(rootPath)
+    generated = true
   } else {
     try {
       await access(vitepressPath)
     } catch {
       await createVitePressConfigForTest(rootPath)
+      generated = true
+    }
+  }
+  const configPath = path.join(vitepressPath, 'config.mjs')
+  if (options.configOnly) {
+    return {
+      root: rootPath,
+      config: configPath,
+      generated
     }
   }
   const createVitePressServer = options.createServer || createServer

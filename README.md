@@ -41,6 +41,7 @@ npm run yuque-local -- format-article https://www.yuque.com/user/book/doc --html
 npm run yuque-local -- update-lake https://www.yuque.com/user/book/doc --lake-file changed.body_asl.html
 npm run yuque-local -- download-book https://www.yuque.com/user/book --dist-dir download --incremental
 npm run yuque-local -- download-doc https://www.yuque.com/user/book/doc --dist-dir download
+npm run yuque-local -- serve-book download/知识库 --config-only
 npm run yuque-local -- serve-book download/知识库 --port 5173
 ```
 
@@ -79,6 +80,7 @@ Current migrated downloader capabilities:
 - download Yuque attachment links locally when possible
 - download Yuque audio/video cards locally when possible
 - write local downloader reports under `reports/`
+- generate VitePress preview config without starting a server
 - start a VitePress preview server for a downloaded book, with sidebar order based on `progress.json`
 
 Still being improved:

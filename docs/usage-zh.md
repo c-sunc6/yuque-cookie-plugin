@@ -190,6 +190,18 @@ npm run yuque-local -- download-doc \
 
 ## 6. 本地预览下载结果
 
+只生成或检查 VitePress 配置，不启动长驻服务：
+
+```bash
+npm run yuque-local -- serve-book /tmp/yuque-download-test/工控 --config-only
+```
+
+该命令会输出 JSON，包含：
+
+- `root`
+- `config`
+- `generated`
+
 下载完成后可以启动 VitePress 预览：
 
 ```bash

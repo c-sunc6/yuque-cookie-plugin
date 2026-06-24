@@ -51,6 +51,7 @@ Options:
   --port <port>          serve-book port, default: 5173
   --host <host>          serve-book host, default: localhost
   --force                Recreate VitePress config
+  --config-only          Generate serve-book VitePress config and exit
   -h, --help             Show help
 `)
 }
@@ -156,11 +157,13 @@ async function main(): Promise<void> {
   if (command === 'serve-book') {
     const [bookPath] = positional
     if (!bookPath) throw new Error('Missing book path.')
-    await serveBook(bookPath, {
+    const result = await serveBook(bookPath, {
       port: typeof flags.port === 'string' ? Number(flags.port) : undefined,
       host: typeof flags.host === 'string' ? flags.host : undefined,
-      force: Boolean(flags.force)
+      force: Boolean(flags.force),
+      configOnly: Boolean(flags.configOnly)
     })
+    if (flags.configOnly) console.log(JSON.stringify({ ok: true, ...result }, null, 2))
     return
   }
 

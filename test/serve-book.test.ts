@@ -78,6 +78,24 @@ describe('serve-book VitePress config', () => {
     expect(await readFile(configPath, 'utf8')).toContain('themeConfig')
   })
 
+  it('can generate config only without starting VitePress', async () => {
+    let createServerCalled = false
+    const result = await serveBook(cwd, {
+      configOnly: true,
+      createServer: async () => {
+        createServerCalled = true
+        return fakeServer() as any
+      }
+    })
+    expect(createServerCalled).toBe(false)
+    expect(result).toMatchObject({
+      root: cwd,
+      config: path.join(cwd, '.vitepress/config.mjs'),
+      generated: true
+    })
+    expect(await readFile(path.join(cwd, '.vitepress/config.mjs'), 'utf8')).toContain('themeConfig')
+  })
+
   it('fails when the book path does not exist', async () => {
     await expect(serveBook(path.join(cwd, 'missing'), {
       createServer: async () => fakeServer() as any

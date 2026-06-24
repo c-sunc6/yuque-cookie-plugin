@@ -13,6 +13,7 @@ export interface CliFlags {
   cookieValue?: string
   apiHost?: string
   port?: string | number
+  configOnly?: boolean
   [key: string]: string | number | boolean | undefined
 }
 

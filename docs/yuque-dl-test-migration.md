@@ -27,7 +27,7 @@ npm test
 
 ```text
 Test Files  12 passed
-Tests       67 passed
+Tests       69 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -198,6 +198,7 @@ Tests       67 passed
 当前覆盖：
 
 - 生成 `.vitepress/config.mjs`
+- `serve-book --config-only` 通过真实 CLI 进程生成配置并输出 JSON，不需要凭据、不启动长驻服务
 - sidebar 按 `progress.json` 顺序
 - 目录 `index.md` link
 - 忽略 `img/`、`attachments/`、`progress.json`
