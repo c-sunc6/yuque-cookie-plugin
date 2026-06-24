@@ -404,7 +404,7 @@ function normalizeIgnoreAttachments(value: unknown): boolean | string {
 function shouldIgnoreAttachment(url: string, ignore: boolean | string): boolean {
   if (ignore === true) return true
   if (typeof ignore !== 'string') return false
-  const ext = extensionFromUrl(url).replace(/^\./, '')
+  const ext = extensionFromUrl(url).replace(/^\./, '') || path.extname(url).replace(/^\./, '')
   return ignore.split(',').map((item) => item.trim()).includes(ext)
 }
 
