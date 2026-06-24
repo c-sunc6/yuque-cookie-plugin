@@ -25,8 +25,8 @@ npm test
 当前测试结果：
 
 ```text
-Test Files  5 passed
-Tests       17 passed
+Test Files  8 passed
+Tests       31 passed
 ```
 
 ## 已迁移的测试覆盖
@@ -96,19 +96,62 @@ Tests       17 passed
 - `editor-serialize`
 - `apply-lake`
 
+### download/article
+
+来源参考：
+
+- `yuque-dl/test/download/article.test.ts`
+
+当前覆盖：
+
+- 普通 Markdown 文档下载
+- 图片本地化
+- 文档时间字段写入 progress item
+- 缺失 `sourcecode` 错误
+- board/table 未支持类型占位
+- sheet 文档转 Markdown
+- uuid 含特殊字符时的图片/附件目录清理
+- 增量模式跳过未变化文档
+
+### attachments
+
+来源参考：
+
+- `yuque-dl/test/download/attachments.test.ts`
+
+当前覆盖：
+
+- Yuque 附件下载
+- 附件链接改写
+- 附件下载失败时保留原始链接
+- 指定后缀忽略
+
+### list / summary
+
+来源参考：
+
+- `yuque-dl/test/download/list.test.ts`
+- `yuque-dl/test/parse/summary.test.ts`
+
+当前覆盖：
+
+- title 文件夹 + doc 文档结构
+- 标题本身也是 doc 时生成 `index.md`
+- 子文档路径
+- `index.md` summary
+- 第二次增量下载跳过未变文档
+
 ## 尚未迁移的 yuque-dl 测试
 
-以下测试还没有完整迁移：
+以下测试还没有完整迁移或只完成了首批覆盖：
 
 - `test/cli.test.ts`
 - `test/index.test.ts`
-- `test/download/article.test.ts`
-- `test/download/attachments.test.ts`
-- `test/download/list.test.ts`
-- `test/parse/summary.test.ts`
 - `test/realRequest.test.ts`
 - 原 snapshot 测试
 - 原 ProgressBar 测试
+- `download/article` 的 custom key token、音视频细节、失败信息 parity
+- `download/list` 的外链、警告、失败重试报告 parity
 
 ## 已发现的差异
 
@@ -132,8 +175,8 @@ yuque-dl 支持 `-k --key` 和 `-t --token`。本项目核心路线是 `_yuque_s
 
 ## 下一步
 
-1. 迁移 `download/article.test.ts`，补齐文档类型、附件、图片、sheet、错误分支。
-2. 迁移 `download/attachments.test.ts`。
-3. 迁移 `download/list.test.ts` 和 `parse/summary.test.ts`。
-4. 增加 CLI 子进程测试，覆盖 `download-book`、`download-doc`、`serve-book`。
+1. 增加 CLI 子进程测试，覆盖 `download-book`、`download-doc`、`serve-book`。
+2. 迁移 `index.test.ts`，覆盖整库入口级行为。
+3. 扩展 `download/article` 对 custom key、音视频 card、附件失败报告的测试。
+4. 迁移 yuque-dl snapshot 测试，或改造成更稳定的结构化断言。
 5. 决定是否实现 yuque-dl 的 `ProgressBar` parity，或将测试改为本项目的 stderr progress 模式。

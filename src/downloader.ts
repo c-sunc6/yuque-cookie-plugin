@@ -53,7 +53,7 @@ export async function downloadBook(client: YuqueCookieClient, url: string, optio
     try {
       const articleUrl = `${articleUrlPrefix}/${item.url}`
       logProgress(`[${handledDocs + 1}/${docTotal}] ${item.title}`)
-      const articleResult = await downloadArticle(client, {
+      const articleResult = await downloadArticleForTest(client, {
         bookId: book.bookId,
         itemUrl: item.url,
         savePath: path.resolve(bookPath, progressItem.savePath || ''),
@@ -142,7 +142,7 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
           child_uuid: ''
         }
       }
-      await downloadArticle(client, {
+      await downloadArticleForTest(client, {
         bookId: doc.bookId,
         itemUrl: doc.docSlug,
         savePath: distPath,
@@ -182,7 +182,7 @@ export async function downloadDocs(client: YuqueCookieClient, urls: string[], op
   }
 }
 
-async function downloadArticle(client: YuqueCookieClient, params: {
+export async function downloadArticleForTest(client: YuqueCookieClient, params: {
   bookId: number
   itemUrl: string
   savePath: string
