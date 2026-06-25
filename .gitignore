@@ -5,7 +5,6 @@ node_modules/
 backups/
 reports/
 download/
-dist/
 .vitepress/cache/
 .vitepress/dist/
 *.lake.html

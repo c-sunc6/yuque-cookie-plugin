@@ -8,7 +8,6 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "prepare": "npm run build",
     "yuque-local": "tsx ./src/cli.ts",
     "real:acceptance": "tsx ./scripts/real-acceptance.ts",
     "typecheck": "tsc --noEmit",
