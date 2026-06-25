@@ -1,6 +1,5 @@
 import { access, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { createServer } from 'vitepress';
 export async function serveBook(root, options = {}) {
     const rootPath = path.resolve(root);
     await access(rootPath);
@@ -27,7 +26,7 @@ export async function serveBook(root, options = {}) {
             generated
         };
     }
-    const createVitePressServer = options.createServer || createServer;
+    const createVitePressServer = options.createServer || await loadVitePressCreateServer();
     const server = await createVitePressServer(rootPath, {
         host: options.host || 'localhost',
         port: Number(options.port || 5173)
@@ -35,6 +34,15 @@ export async function serveBook(root, options = {}) {
     await server.listen();
     server.printUrls();
     return server;
+}
+async function loadVitePressCreateServer() {
+    try {
+        const mod = await import('vitepress');
+        return mod.createServer;
+    }
+    catch (error) {
+        throw new Error(`VitePress is required for "serve-book" without --config-only. Install it in your current project or use "serve-book <book-path> --config-only". Original error: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 export async function createVitePressConfigForTest(root) {
     const vitepressPath = path.join(root, '.vitepress');

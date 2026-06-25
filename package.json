@@ -16,18 +16,18 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@types/node": "^26.0.0",
+    "@types/pako": "^2.0.4",
     "msw": "^2.14.6",
     "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitepress": "^1.6.4",
     "vitest": "^4.1.9"
   },
   "dependencies": {
-    "@types/node": "^26.0.0",
-    "@types/pako": "^2.0.4",
     "markdown-toc": "^1.2.0",
     "node-html-parser": "^8.0.3",
     "pako": "^2.2.0",
-    "playwright": "^1.61.1",
-    "typescript": "^6.0.3",
-    "vitepress": "^1.6.4"
+    "playwright": "^1.61.1"
   }
 }

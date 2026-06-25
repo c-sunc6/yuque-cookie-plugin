@@ -1,6 +1,5 @@
 import { access, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { createServer } from 'vitepress'
 import type { ProgressItem } from './types.ts'
 
 export interface ServeBookOptions {
@@ -8,8 +7,10 @@ export interface ServeBookOptions {
   host?: string | boolean
   force?: boolean
   configOnly?: boolean
-  createServer?: typeof createServer
+  createServer?: CreateServerFn
 }
+
+type CreateServerFn = (root: string, options: { host: string | boolean; port: number }) => Promise<ServeBookServer>
 
 export interface ServeBookServer {
   listen: () => Promise<unknown> | unknown
@@ -46,7 +47,7 @@ export async function serveBook(root: string, options: ServeBookOptions = {}): P
       generated
     }
   }
-  const createVitePressServer = options.createServer || createServer
+  const createVitePressServer = options.createServer || await loadVitePressCreateServer()
   const server = await createVitePressServer(rootPath, {
     host: options.host || 'localhost',
     port: Number(options.port || 5173)
@@ -54,6 +55,15 @@ export async function serveBook(root: string, options: ServeBookOptions = {}): P
   await server.listen()
   server.printUrls()
   return server
+}
+
+async function loadVitePressCreateServer(): Promise<CreateServerFn> {
+  try {
+    const mod = await import('vitepress')
+    return mod.createServer as CreateServerFn
+  } catch (error) {
+    throw new Error(`VitePress is required for "serve-book" without --config-only. Install it in your current project or use "serve-book <book-path> --config-only". Original error: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 export async function createVitePressConfigForTest(root: string): Promise<void> {
