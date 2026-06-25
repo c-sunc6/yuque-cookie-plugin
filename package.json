@@ -1,13 +1,14 @@
 {
   "name": "yuque-cookie-plugin",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "description": "Local Yuque cookie-based CLI plugin for AI agents, without MCP or OpenAPI token.",
   "bin": {
     "yuque-local": "./bin/yuque-local.mjs"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
     "yuque-local": "tsx ./src/cli.ts",
     "real:acceptance": "tsx ./scripts/real-acceptance.ts",
     "typecheck": "tsc --noEmit",
@@ -16,18 +17,18 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@types/node": "^26.0.0",
-    "@types/pako": "^2.0.4",
     "msw": "^2.14.6",
-    "playwright": "^1.61.1",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3",
     "vitest": "^4.1.9"
   },
   "dependencies": {
+    "@types/node": "^26.0.0",
+    "@types/pako": "^2.0.4",
     "markdown-toc": "^1.2.0",
     "node-html-parser": "^8.0.3",
     "pako": "^2.2.0",
+    "playwright": "^1.61.1",
+    "typescript": "^6.0.3",
     "vitepress": "^1.6.4"
   }
 }

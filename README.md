@@ -22,6 +22,21 @@
 
 ## 安装
 
+从 GitHub 一行安装：
+
+```bash
+npm install -g github:c-sunc6/yuque-cookie-plugin
+```
+
+安装后可直接运行：
+
+```bash
+yuque-local --help
+yuque-local login
+```
+
+开发者本地源码运行：
+
 ```bash
 git clone git@github.com:c-sunc6/yuque-cookie-plugin.git
 cd yuque-cookie-plugin
