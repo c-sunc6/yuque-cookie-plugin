@@ -25,7 +25,7 @@
 从 GitHub 一行安装：
 
 ```bash
-npm install -g github:c-sunc6/yuque-cookie-plugin
+npm install -g https://codeload.github.com/c-sunc6/yuque-cookie-plugin/tar.gz/refs/heads/main
 ```
 
 安装后可直接运行：
