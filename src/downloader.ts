@@ -14,6 +14,7 @@ import {
   getMarkdownImageList,
   handleMarkdownFooter,
   localizeAttachments,
+  localizeFileCards,
   localizeImages,
   localizeMedia,
   parseSheet,
@@ -276,6 +277,17 @@ export async function downloadArticleForTest(client: YuqueCookieClient, params: 
 
   if (params.options.ignoreAttachments !== true) {
     markdown = await localizeAttachments(markdown, {
+      savePath: params.savePath,
+      attachmentsDir: `attachments/${fixPath(params.uuid)}`,
+      headers: client.htmlHeaders(),
+      ignoreAttachments: params.options.ignoreAttachments,
+      warnings: params.warnings,
+      title: params.articleTitle
+    })
+  }
+
+  if (params.options.ignoreAttachments !== true) {
+    markdown = await localizeFileCards(markdown, htmlData, {
       savePath: params.savePath,
       attachmentsDir: `attachments/${fixPath(params.uuid)}`,
       headers: client.htmlHeaders(),

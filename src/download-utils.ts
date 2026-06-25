@@ -355,6 +355,41 @@ export async function localizeAttachments(markdown: string, params: {
   return data
 }
 
+export async function localizeFileCards(markdown: string, htmlData: string, params: {
+  savePath: string
+  attachmentsDir: string
+  headers: Record<string, string>
+  ignoreAttachments: boolean | string
+  warnings?: DownloadWarning[]
+  title?: string
+}): Promise<string> {
+  if (params.ignoreAttachments === true) return markdown
+  let data = markdown
+  const cards = parseHtmlFileCards(htmlData).filter((item) => {
+    return !shouldIgnoreAttachment(item.name || item.url, params.ignoreAttachments)
+  })
+  for (const card of cards) {
+    const fileName = fixPath(card.name || path.basename(new URL(card.url).pathname) || 'attachment')
+    const relPath = `${params.attachmentsDir}/${fileName}`
+    const fullPath = path.resolve(params.savePath, relPath)
+    try {
+      await downloadFile({ url: card.url, file: fullPath, headers: params.headers })
+      const emptyLink = new RegExp(`\\[${escapeRegExp(card.name)}\\]\\(\\)`)
+      if (emptyLink.test(data)) data = data.replace(emptyLink, `[附件: ${fileName}](${relPath})`)
+      else data += `\n\n[附件: ${fileName}](${relPath})\n`
+    } catch (error) {
+      params.warnings?.push({
+        type: 'attachment',
+        title: params.title,
+        url: card.url,
+        file: fullPath,
+        error: error instanceof Error ? error.message : String(error)
+      })
+    }
+  }
+  return data
+}
+
 export async function localizeMedia(markdown: string, htmlData: string, params: {
   savePath: string
   attachmentsDir: string
@@ -541,6 +576,28 @@ function parseHtmlMediaCards(htmlData: string, type: 'audio' | 'video'): Array<{
       if (id) result.push({ type, id, name: data.name || data.fileName || path.basename(id), raw: '' })
     } catch {
       // ignore
+    }
+  }
+  return result
+}
+
+function parseHtmlFileCards(htmlData: string): Array<{ url: string; name: string; raw: string }> {
+  const reg = /<card\b[^>]*name="file"[^>]*value="data:(.*?)"[^>]*><\/card>/gm
+  const result: Array<{ url: string; name: string; raw: string }> = []
+  for (const match of htmlData.matchAll(reg)) {
+    try {
+      const data = JSON.parse(decodeURIComponent(match[1])) as Record<string, unknown>
+      const url = firstString(
+        data.download_url,
+        data.downloadUrl,
+        data.attachment_url,
+        data.attachmentUrl,
+        data.url
+      )
+      const name = firstString(data.name, data.filename, data.fileName, url ? path.basename(new URL(url).pathname) : '')
+      if (url) result.push({ url, name: name || 'attachment', raw: match[0] })
+    } catch {
+      continue
     }
   }
   return result

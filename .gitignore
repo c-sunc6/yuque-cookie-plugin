@@ -1,8 +1,12 @@
 .env
+.env.*
+!.env.example
 node_modules/
 backups/
 reports/
 download/
 dist/
+.vitepress/cache/
+.vitepress/dist/
 *.lake.html
 *.log

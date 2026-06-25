@@ -5,6 +5,19 @@ export interface CliFlags {
   out?: string
   lakeFile?: string
   htmlFile?: string
+  markdownFile?: string
+  file?: string
+  afterText?: string
+  title?: string
+  name?: string
+  description?: string
+  slug?: string
+  public?: boolean
+  noToc?: boolean
+  tocAction?: string
+  targetUuid?: string
+  numberHeadings?: boolean
+  noNativeLake?: boolean
   dryRun?: boolean
   keepTemp?: boolean
   sessionEnv?: string
@@ -25,9 +38,14 @@ export interface CliArgs {
 export interface YuqueCredentials {
   session: string
   ctoken: string
+  homeUrl?: string
   extraCookies?: Record<string, string>
   source?: string
   saved_at?: string
+  updated_at?: string
+  last_validated_at?: string
+  last_failed_at?: string
+  last_validation_error?: string
 }
 
 export interface YuqueDocFields {

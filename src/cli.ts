@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 
 import process from 'node:process'
+import path from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
 import { YuqueCookieClient } from './client-cookie.ts'
 import { diffLakeSnapshots } from './lake-diff.ts'
 import { writeJson } from './fs-utils.ts'
-import { getCredentials, loginWithBrowser } from './auth.ts'
+import { getCredentialStatus, getCredentials, loginWithBrowser, recordCredentialValidation } from './auth.ts'
 import { serializeHtmlToLake } from './editor-bridge.ts'
 import { snapshotToMarkdown } from './lake-markdown.ts'
 import { downloadBook, downloadDocs } from './downloader.ts'
 import { normalizeDownloadOptions } from './download-utils.ts'
 import { serveBook } from './serve-book.ts'
+import { enableLakeHeadingNumbering } from './lake-heading-numbering.ts'
+import { extractFirstImageParagraph, insertLakeBlock } from './lake-insert.ts'
 import type { CliArgs, CliFlags, YuqueCredentials, YuqueSnapshot } from './types.ts'
 
 function help(): void {
@@ -18,7 +21,13 @@ function help(): void {
 
 Usage:
   yuque-local inspect <doc-or-book-url>
+  yuque-local auth-status <doc-or-book-url>
   yuque-local login
+  yuque-local create-book --name <name> --slug <slug> [--description <text>] [--public]
+  yuque-local create-doc <book-url> --title <title> --markdown-file <file> [--number-headings] [--slug <slug>] [--no-toc] [--no-native-lake]
+  yuque-local upload-attach <doc-or-book-url> --file <file>
+  yuque-local insert-image <doc-url> --file <image> [--after-text <text>] [--dry-run]
+  yuque-local insert-attachment <doc-url> --file <file> [--after-text <text>] [--dry-run]
   yuque-local snapshot <doc-url> --out <file>
   yuque-local diff-lake <before.json> <after.json>
   yuque-local editor-serialize --html-file <file> --out <lake-file>
@@ -34,10 +43,24 @@ Options:
   --out <file>           Output path
   --lake-file <file>     Lake body_asl HTML file
   --html-file <file>     HTML input file
+  --markdown-file <file> Markdown input file for create-doc
+  --file <file>          Local file for upload-attach / insert-image / insert-attachment
+  --after-text <text>    Insert image/attachment after first block containing text; otherwise append
+  --title <title>        Document title
+  --name <name>          Book name
+  --description <text>   Book description
+  --slug <slug>          Optional custom slug; omit to let Yuque generate it
+  --no-toc               Create doc without attaching it to book TOC
+  --toc-action <action>  TOC action, default: appendByDocs
+  --target-uuid <uuid>   TOC target uuid, default: root
+  --number-headings      Enable Yuque native heading numbering in Lake
+  --no-native-lake       Skip final Lake-native rewrite after Markdown import
+  --public               Create public book when supported
   --dry-run              Build a plan/report without writing online content
   --keep-temp            Keep editor bridge temp files for debugging
   --session-env <name>   Env var for _yuque_session, default: YUQUE_SESSION
   --ctoken-env <name>    Env var for yuque_ctoken, default: YUQUE_CTOKEN
+  --home-url <url>       Optional user/org Yuque home URL, e.g. https://www.yuque.com/your-login/
   --cookie-key <name>    Extra Yuque cookie key, e.g. verified_books
   --cookie-value <value> Extra Yuque cookie value for --cookie-key
   --api-host <url>       Override Yuque API host for tests or enterprise deployments
@@ -107,6 +130,17 @@ async function createClient(flags: CliFlags): Promise<YuqueCookieClient> {
   })
 }
 
+function isAuthLikeError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  return /401|403|Failed to parse appData|Missing Yuque credentials|登录|login|unauthorized|forbidden/i.test(message)
+}
+
+function withReloginHint(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error)
+  if (!isAuthLikeError(error)) return error instanceof Error ? error : new Error(message)
+  return new Error(`${message}\nYuque credentials may be expired. Run "npm run yuque-local -- login" and paste fresh _yuque_session + yuque_ctoken.`)
+}
+
 async function main(): Promise<void> {
   const [command, ...rest] = process.argv.slice(2)
   const { positional, flags } = parseArgs(rest)
@@ -154,6 +188,37 @@ async function main(): Promise<void> {
     return
   }
 
+  if (command === 'auth-status') {
+    const [url] = positional
+    const status = getCredentialStatus(flags)
+    if (!url) {
+      console.log(JSON.stringify(status, null, 2))
+      return
+    }
+    const client = await createClient(flags)
+    try {
+      const inspect = await client.inspect(url)
+      await recordCredentialValidation(true)
+      console.log(JSON.stringify({
+        ...getCredentialStatus(flags),
+        valid: true,
+        checked_at: new Date().toISOString(),
+        inspect
+      }, null, 2))
+    } catch (error) {
+      await recordCredentialValidation(false, error)
+      console.log(JSON.stringify({
+        ...getCredentialStatus(flags),
+        valid: false,
+        checked_at: new Date().toISOString(),
+        error: error instanceof Error ? error.message : String(error),
+        relogin: 'npm run yuque-local -- login'
+      }, null, 2))
+      process.exitCode = 1
+    }
+    return
+  }
+
   if (command === 'serve-book') {
     const [bookPath] = positional
     if (!bookPath) throw new Error('Missing book path.')
@@ -169,79 +234,218 @@ async function main(): Promise<void> {
 
   const client = await createClient(flags)
 
-  if (command === 'inspect') {
-    const [url] = positional
-    if (!url) throw new Error('Missing Yuque URL.')
-    const info = await client.inspect(url)
-    console.log(JSON.stringify(info, null, 2))
-    return
-  }
+  try {
+    if (command === 'inspect') {
+      const [url] = positional
+      if (!url) throw new Error('Missing Yuque URL.')
+      const info = await client.inspect(url)
+      await recordCredentialValidation(true)
+      console.log(JSON.stringify(info, null, 2))
+      return
+    }
 
-  if (command === 'snapshot') {
-    const [url] = positional
-    if (!url) throw new Error('Missing Yuque doc URL.')
-    if (!flags.out || typeof flags.out !== 'string') throw new Error('Missing --out.')
-    const snapshot = await client.snapshotDoc(url)
-    await writeJson(flags.out, snapshot)
-    console.log(`Snapshot written: ${flags.out}`)
-    return
-  }
+    if (command === 'snapshot') {
+      const [url] = positional
+      if (!url) throw new Error('Missing Yuque doc URL.')
+      if (!flags.out || typeof flags.out !== 'string') throw new Error('Missing --out.')
+      const snapshot = await client.snapshotDoc(url)
+      await writeJson(flags.out, snapshot)
+      await recordCredentialValidation(true)
+      console.log(`Snapshot written: ${flags.out}`)
+      return
+    }
 
-  if (command === 'update-lake') {
-    const [url] = positional
-    if (!url) throw new Error('Missing Yuque doc URL.')
-    if (!flags.lakeFile || typeof flags.lakeFile !== 'string') throw new Error('Missing --lake-file.')
-    const lake = await readFile(flags.lakeFile, 'utf8')
-    const result = await client.updateLakeDoc(url, lake)
-    console.log(JSON.stringify(result, null, 2))
-    return
-  }
+    if (command === 'create-book') {
+      if (!flags.name || typeof flags.name !== 'string') throw new Error('Missing --name.')
+      if (!flags.slug || typeof flags.slug !== 'string') throw new Error('Missing --slug.')
+      const result = await client.createBook({
+        name: flags.name,
+        slug: flags.slug,
+        description: typeof flags.description === 'string' ? flags.description : undefined,
+        public: Boolean(flags.public)
+      })
+      await recordCredentialValidation(true)
+      console.log(JSON.stringify(result, null, 2))
+      return
+    }
 
-  if (command === 'apply-lake') {
-    const [url] = positional
-    if (!url) throw new Error('Missing Yuque doc URL.')
-    if (!flags.lakeFile || typeof flags.lakeFile !== 'string') throw new Error('Missing --lake-file.')
-    const lake = await readFile(flags.lakeFile, 'utf8')
-    const result = await client.applyLakeDoc(url, lake, {
-      dryRun: Boolean(flags.dryRun),
-      command: 'apply-lake'
-    })
-    console.log(JSON.stringify(result, null, 2))
-    return
-  }
+    if (command === 'create-doc') {
+      const [bookUrl] = positional
+      if (!bookUrl) throw new Error('Missing Yuque book URL.')
+      if (!flags.title || typeof flags.title !== 'string') throw new Error('Missing --title.')
+      if (!flags.markdownFile || typeof flags.markdownFile !== 'string') throw new Error('Missing --markdown-file.')
+      let body = await readFile(flags.markdownFile, 'utf8')
+      if (!body.trim()) throw new Error('Markdown file is empty.')
+      const result = await client.createMarkdownDoc(bookUrl, {
+        title: flags.title,
+        body,
+        slug: typeof flags.slug === 'string' ? flags.slug : undefined,
+        attachToToc: !flags.noToc,
+        tocAction: typeof flags.tocAction === 'string' ? flags.tocAction : undefined,
+        targetUuid: typeof flags.targetUuid === 'string' ? flags.targetUuid : undefined
+      })
+      if (!flags.noNativeLake && typeof result.url === 'string') {
+        const snapshot = await client.snapshotDoc(result.url)
+        const lake = snapshot.edit?.body_asl || snapshot.lake?.sourcecode || ''
+        const nativeLake = flags.numberHeadings ? enableLakeHeadingNumbering(lake) : lake
+        const applyResult = await client.applyLakeDoc(result.url, nativeLake, {
+          command: flags.numberHeadings ? 'native-lake-number-headings' : 'native-lake'
+        })
+        Object.assign(result, {
+          final_format: 'lake',
+          native_lake: {
+            ok: true,
+            source: 'yuque-generated-body_asl',
+            apply: applyResult
+          },
+          ...(flags.numberHeadings
+            ? {
+                heading_numbering: {
+                  ok: true,
+                  mode: 'lake-native',
+                  data_lake_index_type: '2'
+                }
+              }
+            : {})
+        })
+      }
+      await recordCredentialValidation(true)
+      console.log(JSON.stringify(result, null, 2))
+      return
+    }
 
-  if (command === 'format-article') {
-    const [url] = positional
-    if (!url) throw new Error('Missing Yuque doc URL.')
-    if (!flags.htmlFile || typeof flags.htmlFile !== 'string') throw new Error('Missing --html-file.')
-    const html = await readFile(flags.htmlFile, 'utf8')
-    const serialized = await serializeHtmlToLake({ html, keepTemp: Boolean(flags.keepTemp) })
-    const result = await client.applyLakeDoc(url, serialized.lake, {
-      dryRun: Boolean(flags.dryRun),
-      command: 'format-article'
-    })
-    console.log(JSON.stringify({
-      serializer: serialized.serializer,
-      lake_length: serialized.lake.length,
-      ...result
-    }, null, 2))
-    return
-  }
+    if (command === 'upload-attach') {
+      const [url] = positional
+      if (!url) throw new Error('Missing Yuque URL.')
+      if (!flags.file || typeof flags.file !== 'string') throw new Error('Missing --file.')
+      const result = await client.uploadAttach(url, flags.file)
+      await recordCredentialValidation(true)
+      console.log(JSON.stringify(result, null, 2))
+      return
+    }
 
-  if (command === 'download-book') {
-    const [url] = positional
-    if (!url) throw new Error('Missing Yuque book URL.')
-    const result = await downloadBook(client, url, normalizeDownloadOptions(flags))
-    console.log(JSON.stringify(result, null, 2))
-    return
-  }
+    if (command === 'insert-image') {
+      const [url] = positional
+      if (!url) throw new Error('Missing Yuque doc URL.')
+      if (!flags.file || typeof flags.file !== 'string') throw new Error('Missing --file.')
+      const uploaded = await client.uploadAttach(url, flags.file)
+      const uploadData = uploaded.upload as Record<string, unknown> | undefined
+      const imageUrl = typeof uploadData?.url === 'string' ? uploadData.url : ''
+      if (!imageUrl) throw new Error('Upload succeeded but response did not include upload.url.')
+      const imageHtml = `<p><img src="${escapeHtmlAttr(imageUrl)}" alt="${escapeHtmlAttr(String(uploadData?.filename || path.basename(flags.file)))}"></p>`
+      const serialized = await serializeHtmlToLake({ html: imageHtml, keepTemp: Boolean(flags.keepTemp) })
+      const imageBlock = extractFirstImageParagraph(serialized.lake)
+      const snapshot = await client.snapshotDoc(url)
+      const currentLake = snapshot.edit?.body_asl || snapshot.lake?.sourcecode || ''
+      const nextLake = insertLakeBlock(currentLake, imageBlock, typeof flags.afterText === 'string' ? flags.afterText : undefined)
+      const applyResult = await client.applyLakeDoc(url, nextLake, {
+        dryRun: Boolean(flags.dryRun),
+        command: 'insert-image'
+      })
+      await recordCredentialValidation(true)
+      console.log(JSON.stringify({
+        ok: true,
+        dry_run: Boolean(flags.dryRun),
+        uploaded,
+        serializer: serialized.serializer,
+        image_block_length: imageBlock.length,
+        inserted_after_text: typeof flags.afterText === 'string' ? flags.afterText : null,
+        apply: applyResult
+      }, null, 2))
+      return
+    }
 
-  if (command === 'download-doc') {
-    if (!positional.length) throw new Error('Missing Yuque doc URL.')
-    const result = await downloadDocs(client, positional, normalizeDownloadOptions(flags))
-    console.log(JSON.stringify(result, null, 2))
-    if (result.ok === false && Number(result.downloaded || 0) === 0) process.exitCode = 1
-    return
+    if (command === 'insert-attachment') {
+      const [url] = positional
+      if (!url) throw new Error('Missing Yuque doc URL.')
+      if (!flags.file || typeof flags.file !== 'string') throw new Error('Missing --file.')
+      const uploaded = await client.uploadAttach(url, flags.file)
+      const uploadData = uploaded.upload as Record<string, unknown> | undefined
+      if (!uploadData?.url) throw new Error('Upload succeeded but response did not include upload.url.')
+      const attachmentBlock = buildAttachmentBlock(uploadData, flags.file, url)
+      const snapshot = await client.snapshotDoc(url)
+      const currentLake = snapshot.edit?.body_asl || snapshot.lake?.sourcecode || ''
+      const nextLake = insertLakeBlock(currentLake, attachmentBlock, typeof flags.afterText === 'string' ? flags.afterText : undefined)
+      const applyResult = await client.applyLakeDoc(url, nextLake, {
+        dryRun: Boolean(flags.dryRun),
+        command: 'insert-attachment'
+      })
+      await recordCredentialValidation(true)
+      console.log(JSON.stringify({
+        ok: true,
+        dry_run: Boolean(flags.dryRun),
+        uploaded,
+        attachment_block_length: attachmentBlock.length,
+        inserted_after_text: typeof flags.afterText === 'string' ? flags.afterText : null,
+        apply: applyResult
+      }, null, 2))
+      return
+    }
+
+    if (command === 'update-lake') {
+      const [url] = positional
+      if (!url) throw new Error('Missing Yuque doc URL.')
+      if (!flags.lakeFile || typeof flags.lakeFile !== 'string') throw new Error('Missing --lake-file.')
+      const lake = await readFile(flags.lakeFile, 'utf8')
+      const result = await client.updateLakeDoc(url, lake)
+      await recordCredentialValidation(true)
+      console.log(JSON.stringify(result, null, 2))
+      return
+    }
+
+    if (command === 'apply-lake') {
+      const [url] = positional
+      if (!url) throw new Error('Missing Yuque doc URL.')
+      if (!flags.lakeFile || typeof flags.lakeFile !== 'string') throw new Error('Missing --lake-file.')
+      const lake = await readFile(flags.lakeFile, 'utf8')
+      const result = await client.applyLakeDoc(url, lake, {
+        dryRun: Boolean(flags.dryRun),
+        command: 'apply-lake'
+      })
+      await recordCredentialValidation(true)
+      console.log(JSON.stringify(result, null, 2))
+      return
+    }
+
+    if (command === 'format-article') {
+      const [url] = positional
+      if (!url) throw new Error('Missing Yuque doc URL.')
+      if (!flags.htmlFile || typeof flags.htmlFile !== 'string') throw new Error('Missing --html-file.')
+      const html = await readFile(flags.htmlFile, 'utf8')
+      const serialized = await serializeHtmlToLake({ html, keepTemp: Boolean(flags.keepTemp) })
+      const result = await client.applyLakeDoc(url, serialized.lake, {
+        dryRun: Boolean(flags.dryRun),
+        command: 'format-article'
+      })
+      console.log(JSON.stringify({
+        serializer: serialized.serializer,
+        lake_length: serialized.lake.length,
+        ...result
+      }, null, 2))
+      await recordCredentialValidation(true)
+      return
+    }
+
+    if (command === 'download-book') {
+      const [url] = positional
+      if (!url) throw new Error('Missing Yuque book URL.')
+      const result = await downloadBook(client, url, normalizeDownloadOptions(flags))
+      await recordCredentialValidation(true)
+      console.log(JSON.stringify(result, null, 2))
+      return
+    }
+
+    if (command === 'download-doc') {
+      if (!positional.length) throw new Error('Missing Yuque doc URL.')
+      const result = await downloadDocs(client, positional, normalizeDownloadOptions(flags))
+      if (result.ok !== false || Number(result.downloaded || 0) > 0) await recordCredentialValidation(true)
+      console.log(JSON.stringify(result, null, 2))
+      if (result.ok === false && Number(result.downloaded || 0) === 0) process.exitCode = 1
+      return
+    }
+  } catch (error) {
+    await recordCredentialValidation(false, error)
+    throw withReloginHint(error)
   }
 
   throw new Error(`Unknown command: ${command}`)
@@ -252,3 +456,47 @@ main().catch((error: unknown) => {
   console.error(`yuque-local error: ${message}`)
   process.exitCode = 1
 })
+
+function escapeHtmlAttr(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+function buildAttachmentBlock(upload: Record<string, unknown>, filePath: string, docUrl: string): string {
+  const filename = String(upload.filename || path.basename(filePath))
+  const ext = String(upload.extname || path.extname(filename).replace(/^\./, '') || '')
+  const downloadUrl = typeof upload.url === 'string' ? upload.url : ''
+  const previewUrl = buildOfficePreviewUrl(upload, docUrl) || downloadUrl
+  const data = {
+    id: upload.attachment_id,
+    attachmentId: upload.attachment_id,
+    name: filename,
+    filename,
+    size: upload.size,
+    filesize: upload.size,
+    ext,
+    filekey: upload.filekey,
+    src: previewUrl,
+    url: previewUrl,
+    previewUrl,
+    preview_url: previewUrl,
+    downloadUrl,
+    download_url: downloadUrl,
+    status: 'done',
+    mode: upload.mode || 'private'
+  }
+  return `<p><card type="inline" name="file" value="data:${encodeURIComponent(JSON.stringify(data))}"></card></p>`
+}
+
+function buildOfficePreviewUrl(upload: Record<string, unknown>, docUrl: string): string {
+  if (typeof upload.filekey !== 'string' || !upload.filekey.trim()) return ''
+  try {
+    const origin = new URL(docUrl).origin
+    return `${origin}/office/${upload.filekey}?from=${encodeURIComponent(docUrl)}`
+  } catch {
+    return ''
+  }
+}

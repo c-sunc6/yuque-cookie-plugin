@@ -53,18 +53,36 @@ http://127.0.0.1:34567/
 
 在网页中填写：
 
+- 语雀个人/团队主页 URL，例如 `https://www.yuque.com/your-login/`
 - `_yuque_session`
 - `yuque_ctoken`
 
 保存后页面会显示 `Saved`，CLI 会自动退出。
 
+配置文件会记录：
+
+- `saved_at`
+- `updated_at`
+- `homeUrl`
+- `last_validated_at`
+- `last_failed_at`
+- `last_validation_error`
+
 验证配置是否可用：
 
 ```bash
-npm run yuque-local -- inspect https://www.yuque.com/xiaoxindexiaji/ydv5i5
+npm run yuque-local -- auth-status https://www.yuque.com/<your-login>/<your-book>
 ```
 
-成功时会输出知识库 id、slug、名称、TOC 数量和当前用户信息。
+成功时会输出 `valid: true`，并更新 `last_validated_at`。失败时会输出 `valid: false`，记录失败时间，并提示重新运行登录命令。
+
+也可以只查看本地配置状态：
+
+```bash
+npm run yuque-local -- auth-status
+```
+
+正常执行 `inspect`、`snapshot`、`download-book`、`download-doc` 等真实语雀命令成功后，也会刷新 `last_validated_at`。如果检测到 401、403、页面无法解析等登录态问题，CLI 会提示重新登录。
 
 ### 额外 Cookie
 
@@ -95,7 +113,7 @@ export YUQUE_EXTRA_COOKIE_VALUE='<cookie-value>'
 推荐先下载到临时目录验证：
 
 ```bash
-npm run yuque-local -- download-book https://www.yuque.com/xiaoxindexiaji/ydv5i5 --dist-dir /tmp/yuque-download-test --incremental
+npm run yuque-local -- download-book https://www.yuque.com/<your-login>/<your-book> --dist-dir /tmp/yuque-download-test --incremental
 ```
 
 输出会显示逐篇进度：
@@ -194,6 +212,164 @@ AI 或脚本可以用 `retry.args` 只重试失败文档。
 ```
 
 `resources.files` 只记录本地相对路径和大小，不保存 Cookie。
+
+## 4.1 创建知识库和文档
+
+创建私密测试知识库：
+
+```bash
+npm run yuque-local -- create-book \
+  --name AI真实测试知识库 \
+  --slug ai-real-test-book
+```
+
+在已有知识库中创建 Markdown 文档：
+
+```bash
+npm run yuque-local -- create-doc https://www.yuque.com/<your-login>/<your-book> \
+  --title AI真实测试文档 \
+  --markdown-file article.md
+```
+
+默认行为：
+
+- 不传 `--slug`，由语雀自动生成文档 slug。
+- 自动挂载到知识库目录根节点，返回值中 `toc_attached: true`。
+- 输入文件可以是 Markdown。
+- 创建后会立即读取语雀生成的 `body_asl`，再写回为 Lake，确保最终文档进入语雀原生 Lake 格式。
+- 不默认修改标题文本。
+- 返回 JSON 中 `format` 表示语雀创建接口的初始格式；如果默认 Lake 写回成功，会额外返回 `final_format: "lake"`。
+
+## 4.2 上传和插入附件
+
+只上传文件，不写入正文：
+
+```bash
+npm run yuque-local -- upload-attach <doc-or-book-url> --file ./example.pdf
+```
+
+上传并插入到文档正文：
+
+```bash
+npm run yuque-local -- insert-attachment <doc-url> \
+  --file ./example.pdf \
+  --after-text 图片位置
+```
+
+PDF 附件的原生写入规则：
+
+- 文件先通过语雀 Web Session 上传，返回 `filekey`、`attachment_id` 和附件下载 URL。
+- 正文写入 `file` card。
+- `src` 必须是 `https://www.yuque.com/office/<filekey>?from=<doc-url>`，这是语雀阅读页打开 PDF 预览所需字段。
+- `downloadUrl/download_url` 保留原始附件地址，供 `download-doc` 落盘资源使用。
+- 如果 file card 只有 `url/previewUrl` 但没有 `src`，阅读页点击可能打开 `about:blank`。
+
+如果需要符合“标题带层级编号”的阅读习惯，创建时加 `--number-headings`：
+
+```bash
+npm run yuque-local -- create-doc https://www.yuque.com/<your-login>/<your-book> \
+  --title AI真实测试文档 \
+  --markdown-file article.md \
+  --number-headings
+```
+
+该参数不会把 `1.` 写进 Markdown 标题文本，而是在语雀生成 Lake 后给标题节点加语雀原生属性：
+
+```html
+<h1 data-lake-index-type="2">一级标题</h1>
+```
+
+这和在语雀编辑器里手动开启标题编号后的 Lake 结构一致。阅读页面会渲染出 `1.`、`1.1.`、`1.1.1.`，但编号不会混进标题正文。
+
+调试时如果只想停留在语雀 Markdown 导入结果，不做最终 Lake 写回，可以加：
+
+```bash
+--no-native-lake
+```
+
+只有确实需要固定 URL 时才传 `--slug`：
+
+```bash
+npm run yuque-local -- create-doc https://www.yuque.com/<your-login>/<your-book> \
+  --title AI真实测试文档 \
+  --slug custom-doc-slug \
+  --markdown-file article.md
+```
+
+如果只想创建可通过 URL 访问、但不加入目录的文档：
+
+```bash
+npm run yuque-local -- create-doc https://www.yuque.com/<your-login>/<your-book> \
+  --title AI真实测试文档 \
+  --markdown-file article.md \
+  --no-toc
+```
+
+真实验收结论：
+
+- `create-book` 已通过真实语雀验证，可以创建私密知识库。
+- `create-doc` 已通过真实语雀验证，可以创建真实文档，默认让语雀生成 slug，并自动加入知识库 TOC。
+- 语雀会把 Markdown 创建结果自动转换成 Lake 文档，工具随后会默认写回 Lake，后续修改应按 Lake 链路处理。
+- 当前原生写入能力矩阵见 `docs/native-lake-capability.md`。图片、附件、思维导图、画板属于下一阶段真实探索项，不能在未验证前手写 card。
+
+## 4.2 上传图片或附件探索
+
+只上传本地文件，不写入正文：
+
+```bash
+npm run yuque-local -- upload-attach https://www.yuque.com/user/book/doc \
+  --file /path/to/image.png
+```
+
+该命令使用 Web Session 调用语雀网页端上传接口：
+
+```text
+POST /api/upload/attach
+```
+
+当前用途是探索图片/附件的原生返回结构。上传成功后会输出 `upload` 返回体和本地报告路径，但不会自动生成 Lake card，也不会修改线上文档正文。
+
+上传并插入本地图片到语雀文档：
+
+```bash
+npm run yuque-local -- insert-image https://www.yuque.com/user/book/doc \
+  --file /path/to/image.png \
+  --dry-run
+```
+
+确认 dry-run 后实际写入：
+
+```bash
+npm run yuque-local -- insert-image https://www.yuque.com/user/book/doc \
+  --file /path/to/image.png
+```
+
+默认追加到文档末尾。如果要插入到包含某段文字的块后面：
+
+```bash
+npm run yuque-local -- insert-image https://www.yuque.com/user/book/doc \
+  --file /path/to/image.png \
+  --after-text "图片应插入在这里。"
+```
+
+注意：`insert-image --dry-run` 会真实上传图片以获得语雀 CDN URL，但不会修改文档正文。
+
+上传并插入附件到语雀文档：
+
+```bash
+npm run yuque-local -- insert-attachment https://www.yuque.com/user/book/doc \
+  --file /path/to/file.pdf \
+  --dry-run
+```
+
+确认 dry-run 后实际写入：
+
+```bash
+npm run yuque-local -- insert-attachment https://www.yuque.com/user/book/doc \
+  --file /path/to/file.pdf
+```
+
+和图片一样，`insert-attachment --dry-run` 会真实上传附件以获得语雀附件 URL，但不会修改文档正文。
 
 ## 5. 下载单篇或多篇文档
 
@@ -382,7 +558,7 @@ npm run yuque-local -- format-article https://www.yuque.com/user/book/doc --html
 
 - 登录保存 Cookie。
 - `inspect` 读取私有知识库。
-- 下载 `https://www.yuque.com/xiaoxindexiaji/ydv5i5`。
+- 下载 `https://www.yuque.com/<your-login>/<your-book>`。
 - 15 篇 Markdown 文档下载成功。
 - 第二次增量下载全部跳过。
 - 导出文件名保留正常空格。

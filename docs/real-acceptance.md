@@ -4,6 +4,8 @@
 
 `real:acceptance` 用于手动验证真实语雀 Web Session 链路。它替代 `yuque-dl/test/realRequest.test.ts` 的思路，但不会进入默认 `npm test`。
 
+上线前最终验收必须使用真实语雀 URL、真实文档、真实图片/附件/音视频资源。Mock 数据只用于开发阶段单元测试，不能作为上线验收依据。
+
 原因：
 
 - 真实验收依赖网络、登录态和私有知识库权限。
@@ -18,11 +20,20 @@
 npm run yuque-local -- login
 ```
 
+登录后先检查登录态：
+
+```bash
+npm run yuque-local -- auth-status https://www.yuque.com/<your-login>/<your-book>
+```
+
+`auth-status` 会记录最近保存、最近成功验证、最近失败验证时间。若返回 `valid: false`，需要重新运行 `login` 并由用户手动填写新的 Cookie。
+
 或使用环境变量：
 
 ```bash
 export YUQUE_SESSION='your _yuque_session'
 export YUQUE_CTOKEN='your yuque_ctoken'
+export YUQUE_HOME_URL='https://www.yuque.com/your-login/'
 ```
 
 不要把真实 Cookie 写入项目文件。
@@ -31,7 +42,7 @@ export YUQUE_CTOKEN='your yuque_ctoken'
 
 ```bash
 npm run real:acceptance -- \
-  --book-url https://www.yuque.com/xiaoxindexiaji/ydv5i5 \
+  --book-url https://www.yuque.com/<your-login>/<your-book> \
   --dist-dir /tmp/yuque-real-acceptance
 ```
 

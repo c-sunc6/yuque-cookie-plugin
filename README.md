@@ -16,8 +16,11 @@ npm install
 npm run yuque-local -- login
 ```
 
+This project is designed to run as an isolated local CLI. Use project-local commands such as `npm run yuque-local -- ...`; do not use global installation, `npm link`, or global npm configuration for the MVP workflow.
+
 `login` opens a local browser page where you can paste `_yuque_session` and `yuque_ctoken`.
 Credentials are saved to `~/.config/yuque-cookie-plugin/config.json` with `0600` permissions.
+The login page also asks for your Yuque user or organization home URL, for example `https://www.yuque.com/your-login/`; this keeps the project from hardcoding any maintainer-specific Yuque address.
 If a command needs credentials and none are configured yet, the CLI opens this page automatically.
 
 Environment variables still override saved credentials:
@@ -25,6 +28,7 @@ Environment variables still override saved credentials:
 ```bash
 export YUQUE_SESSION='your _yuque_session'
 export YUQUE_CTOKEN='your yuque_ctoken'
+export YUQUE_HOME_URL='https://www.yuque.com/your-login/'
 ```
 
 ## Commands
@@ -64,6 +68,8 @@ npm run typecheck
 npm run yuque-local -- --help
 npm run real:acceptance -- --book-url https://www.yuque.com/user/book --dist-dir /tmp/yuque-real-acceptance
 ```
+
+For GitHub MVP release preparation, see `docs/github-mvp-release.md`.
 
 ## Yuque-dl Migration
 
